@@ -591,4 +591,23 @@ export default function SipCalculator() {
                 <TableBody>
                   {barData.map((row, i) => (
                     <TableRow key={i}>
-                      <TableCell
+                      <TableCell align="right">
+                        {row.Invested.toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell align="right">
+                        {(row.Invested + row.Gain).toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell align="right">
+                        {row.Gain.toLocaleString("en-IN")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          </Box>
+        </Paper>
+      )}
+    </Box>
+  );
+}
