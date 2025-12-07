@@ -19,6 +19,10 @@ import {
   Tooltip,
 } from "recharts";
 
+/* ---------- API BASE URL added ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 type RollingPoint = {
   startDate: string;
   endDate: string;
@@ -71,7 +75,7 @@ export default function MfRollingReturnCalculator() {
       });
 
       const res = await fetch(
-        `http://localhost:8080/api/mf/rolling-returns?${params.toString()}`
+        `${API_BASE_URL}/mf/rolling-returns?${params.toString()}`
       );
 
       if (!res.ok) {

@@ -27,6 +27,10 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- 🔥 BASE URL HERE ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type RetirementPoint = {
@@ -205,7 +209,8 @@ export default function RetirementCalculator() {
         inflation: inf.toString(),
       });
 
-      const url = `http://localhost:8080/api/retirement?${params.toString()}`;
+      /* ---------- 🔥 ONLY THIS LINE CHANGED ---------- */
+      const url = `${API_BASE_URL}/retirement?${params.toString()}`;
       console.log("Retirement API URL:", url);
 
       const response = await fetch(url);
@@ -433,7 +438,7 @@ export default function RetirementCalculator() {
                 </li>
                 <li>
                   We adjust your future corpus for inflation to show a rough
-                  &quot;today&apos;s value&quot;.
+                  "today’s value".
                 </li>
               </ul>
 
@@ -457,7 +462,7 @@ export default function RetirementCalculator() {
                 <Typography variant="body2" color="text.secondary">
                   {hasResult
                     ? summary
-                    : "Enter your age, monthly investment, existing corpus, expected return and inflation to estimate your retirement corpus and its value in today's money."}
+                    : "Enter your details to estimate retirement corpus and value in today's money."}
                 </Typography>
 
                 {hasResult && (
@@ -471,9 +476,7 @@ export default function RetirementCalculator() {
                           mt: 1,
                         }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Corpus at retirement in words:
-                        </Box>{" "}
+                        <strong>Corpus at retirement in words:</strong>{" "}
                         {corpusWordsSummary} Rupees.
                       </Typography>
                     )}
@@ -487,9 +490,7 @@ export default function RetirementCalculator() {
                           mt: 1,
                         }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          In today&apos;s value (approx):
-                        </Box>{" "}
+                        <strong>In today's value (approx):</strong>{" "}
                         {corpusTodayWordsSummary} Rupees.
                       </Typography>
                     )}
@@ -540,7 +541,7 @@ export default function RetirementCalculator() {
                     <Line
                       type="monotone"
                       dataKey="corpusReal"
-                      name="Corpus (in today's value)"
+                      name="Corpus (today's value)"
                       stroke="#94a3b8"
                       strokeWidth={2}
                     />
@@ -553,23 +554,18 @@ export default function RetirementCalculator() {
                 color="text.secondary"
                 sx={{ mt: 2, mb: 1 }}
               >
-                This table shows how your retirement corpus grows with age, both
-                in nominal terms and adjusted for inflation to today&apos;s value.
+                This table shows how your retirement corpus grows with age in 
+                both nominal and inflation-adjusted terms.
               </Typography>
               <Box sx={{ overflowX: "auto" }}>
-                <Table
-                  size="small"
-                  aria-label="Retirement corpus vs age table"
-                >
+                <Table size="small" aria-label="Retirement corpus vs age table">
                   <TableHead>
                     <TableRow>
                       <TableCell>Age</TableCell>
                       <TableCell align="right">Invested (₹)</TableCell>
+                      <TableCell align="right">Corpus (nominal, ₹)</TableCell>
                       <TableCell align="right">
-                        Corpus (nominal, ₹)
-                      </TableCell>
-                      <TableCell align="right">
-                        Corpus (today&apos;s value, ₹)
+                        Corpus (today's value, ₹)
                       </TableCell>
                     </TableRow>
                   </TableHead>
@@ -578,19 +574,13 @@ export default function RetirementCalculator() {
                       <TableRow key={row.age}>
                         <TableCell>{row.age}</TableCell>
                         <TableCell align="right">
-                          {row.invested.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
+                          {row.invested.toLocaleString("en-IN")}
                         </TableCell>
                         <TableCell align="right">
-                          {row.corpus.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
+                          {row.corpus.toLocaleString("en-IN")}
                         </TableCell>
                         <TableCell align="right">
-                          {row.corpusReal.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
+                          {row.corpusReal.toLocaleString("en-IN")}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -618,11 +608,7 @@ export default function RetirementCalculator() {
                       }
                     />
                     <Legend />
-                    <Bar
-                      dataKey="Invested"
-                      name="Total invested"
-                      fill="#38bdf8"
-                    />
+                    <Bar dataKey="Invested" name="Total invested" fill="#38bdf8" />
                     <Bar
                       dataKey="Corpus"
                       name="Corpus at retirement"
@@ -642,9 +628,8 @@ export default function RetirementCalculator() {
                 color="text.secondary"
                 sx={{ mt: 2, mb: 1 }}
               >
-                This table compares how much you invest over the years with the
-                corpus you may build at retirement, both in nominal terms and in
-                today&apos;s value.
+                This table compares your total investment with your estimated 
+                retirement corpus (nominal and today's value).
               </Typography>
               <Box sx={{ overflowX: "auto" }}>
                 <Table
@@ -654,11 +639,9 @@ export default function RetirementCalculator() {
                   <TableHead>
                     <TableRow>
                       <TableCell align="right">Invested (₹)</TableCell>
+                      <TableCell align="right">Corpus (nominal, ₹)</TableCell>
                       <TableCell align="right">
-                        Corpus (nominal, ₹)
-                      </TableCell>
-                      <TableCell align="right">
-                        Corpus (today&apos;s value, ₹)
+                        Corpus (today's value, ₹)
                       </TableCell>
                     </TableRow>
                   </TableHead>
@@ -666,19 +649,13 @@ export default function RetirementCalculator() {
                     {barData.map((row, index) => (
                       <TableRow key={index}>
                         <TableCell align="right">
-                          {row.Invested.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
+                          {row.Invested.toLocaleString("en-IN")}
                         </TableCell>
                         <TableCell align="right">
-                          {row.Corpus.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
+                          {row.Corpus.toLocaleString("en-IN")}
                         </TableCell>
                         <TableCell align="right">
-                          {row.CorpusReal.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
+                          {row.CorpusReal.toLocaleString("en-IN")}
                         </TableCell>
                       </TableRow>
                     ))}

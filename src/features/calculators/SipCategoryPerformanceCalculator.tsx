@@ -27,6 +27,11 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- base URL (only change) ---------- */
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type SipCategoryRow = {
@@ -38,7 +43,7 @@ type SipCategoryRow = {
   fromDate: string;
   toDate: string;
   monthlySipAmount: number;
-  totalInvestedAmount: number; // ✅ match JSON
+  totalInvestedAmount: number;
   currentValue: number;
   absoluteReturnPercent: number;
   cagrPercent: number;
@@ -65,7 +70,7 @@ type SipCategoryPerformanceApiResponse = {
   bestCagrPercent: number;
   worstCagrPercent: number;
   averageCagrPercent: number;
-  totalInvestedAmount: number; // ✅ match JSON
+  totalInvestedAmount: number;
   summaryText: string;
   inputSummary: string;
   tableRows: SipCategoryRow[];
@@ -113,7 +118,7 @@ export default function SipCategoryPerformanceCalculator() {
       });
 
       const res = await fetch(
-        `http://localhost:8080/api/mf/sip-performance?${params.toString()}`
+        `${API_BASE_URL}/mf/sip-performance?${params.toString()}`
       );
 
       if (!res.ok) {

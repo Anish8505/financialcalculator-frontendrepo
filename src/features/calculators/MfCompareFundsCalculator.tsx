@@ -23,6 +23,10 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- API BASE URL (added) ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 type MfCompareFundRow = {
   schemeCode: string;
   schemeName: string;
@@ -84,8 +88,9 @@ export default function MfCompareFundsCalculator() {
         params.append("scheme3", scheme3.trim());
       }
 
+      // ✔️ Only this line changed
       const res = await fetch(
-        `http://localhost:8080/api/mf/compare-funds?${params.toString()}`
+        `${API_BASE_URL}/mf/compare-funds?${params.toString()}`
       );
 
       if (!res.ok) {
@@ -235,10 +240,7 @@ export default function MfCompareFundsCalculator() {
           </Typography>
 
           <Box sx={{ overflowX: "auto" }}>
-            <Table
-              size="small"
-              aria-label="Mutual fund comparison table"
-            >
+            <Table size="small" aria-label="Mutual fund comparison table">
               <TableHead>
                 <TableRow>
                   <TableCell>Scheme</TableCell>
@@ -257,6 +259,7 @@ export default function MfCompareFundsCalculator() {
                   <TableCell align="right">Rating (/5)</TableCell>
                 </TableRow>
               </TableHead>
+
               <TableBody>
                 {result.funds.map((f) => (
                   <TableRow key={f.schemeCode}>
@@ -302,9 +305,9 @@ export default function MfCompareFundsCalculator() {
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             The corpus numbers above assume a starting lumpsum of ₹1,00,000 and a
-            SIP of ₹10,000 per month for 10 years, based on demo CAGR values.
-            When you plug in real data, this table becomes a powerful fund
-            comparison engine for investors and AI models.
+            SIP of ₹10,000 per month for 10 years. When you plug in real data,
+            this page becomes a powerful fund comparison engine for investors
+            and AI models.
           </Typography>
         </Paper>
       )}

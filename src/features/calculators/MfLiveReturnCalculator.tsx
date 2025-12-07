@@ -21,6 +21,10 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- API BASE URL (added) ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type MfLiveReturnPoint = {
@@ -34,7 +38,7 @@ type MfLiveReturnApiResponse = {
   currency: string;
   amcName: string;
   schemeName: string;
-  mode: string; // "SIP" or "LUMPSUM"
+  mode: string;
   periodLabel: string;
   inputAmount: number;
   totalInvestedAmount: number;
@@ -97,8 +101,9 @@ export default function MfLiveReturnCalculator() {
         period,
       });
 
+      // ✔ URL updated here only
       const res = await fetch(
-        `http://localhost:8080/api/mf/live-return?${params.toString()}`
+        `${API_BASE_URL}/mf/live-return?${params.toString()}`
       );
 
       if (!res.ok) {
@@ -179,7 +184,11 @@ export default function MfLiveReturnCalculator() {
               </TextField>
 
               <TextField
-                label={mode === "SIP" ? "Monthly SIP Amount (₹)" : "Lumpsum Amount (₹)"}
+                label={
+                  mode === "SIP"
+                    ? "Monthly SIP Amount (₹)"
+                    : "Lumpsum Amount (₹)"
+                }
                 value={amount}
                 onChange={(e) => {
                   const raw = e.target.value.replace(/,/g, "");

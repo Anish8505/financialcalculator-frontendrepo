@@ -28,6 +28,11 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- base URL ---------- */
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type SipPoint = {
@@ -42,7 +47,6 @@ type BarPoint = {
   Gain: number;
 };
 
-// matches the improved backend response
 type SipYearPointApi = {
   year: number;
   invested: number;
@@ -53,12 +57,11 @@ type SipApiResponse = {
   investedAmount: number;
   maturityAmount: number;
   profit: number;
-  yearlyPoints?: SipYearPointApi[]; // optional, we also support old backend
+  yearlyPoints?: SipYearPointApi[];
 };
 
-/* ---------- helpers: indian formatting + number to words ---------- */
+/* ---------- helpers ---------- */
 
-// Format string as Indian number (e.g. 66666 -> 66,666; 666666 -> 6,66,666)
 const formatIndianNumber = (value: string) => {
   if (!value) return "";
 
@@ -69,7 +72,6 @@ const formatIndianNumber = (value: string) => {
   return Number(cleaned).toLocaleString("en-IN");
 };
 
-// Convert number to words in Indian system (crore / lakh / thousand)
 const numberToWords = (num: number): string => {
   if (!num) return "";
 
@@ -147,7 +149,6 @@ const numberToWords = (num: number): string => {
   return words.trim();
 };
 
-// Turn "seven hundred ..." into "Seven Hundred ..."
 const toTitleCase = (str: string): string =>
   str.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
 
@@ -168,7 +169,7 @@ export default function SipCalculator() {
 
   const hasResult = lineData.length > 0;
 
-  // 🔗 This is where we call your Spring Boot backend: GET http://localhost:8080/api/sip
+  /* ------------------ API CALL (updated URL) ------------------ */
   const handleCalculate = async () => {
     const p = Number(monthlyInvestment.replace(/,/g, ""));
     const r = Number(annualRate);
@@ -194,7 +195,7 @@ export default function SipCalculator() {
       });
 
       const response = await fetch(
-        `http://localhost:8080/api/sip?${params.toString()}`
+        `${API_BASE_URL}/sip?${params.toString()}`
       );
 
       if (!response.ok) {
@@ -207,7 +208,6 @@ export default function SipCalculator() {
       const total = data.maturityAmount;
       const gain = data.profit;
 
-      // summary line
       const totalRounded = Math.round(total);
       const gainRounded = Math.round(gain);
 
@@ -219,29 +219,23 @@ export default function SipCalculator() {
         )} (gain: ₹${gainRounded.toLocaleString("en-IN")}).`
       );
 
-      // words
       const investedWordsRaw = numberToWords(Math.round(invested));
       const gainWordsRaw = numberToWords(gainRounded);
       const futureWordsRaw = numberToWords(totalRounded);
 
-      setInvestedWordsSummary(
-        investedWordsRaw ? toTitleCase(investedWordsRaw) : ""
-      );
-      setGainWordsSummary(gainWordsRaw ? toTitleCase(gainWordsRaw) : "");
-      setFutureWordsSummary(futureWordsRaw ? toTitleCase(futureWordsRaw) : "");
+      setInvestedWordsSummary(toTitleCase(investedWordsRaw || ""));
+      setGainWordsSummary(toTitleCase(gainWordsRaw || ""));
+      setFutureWordsSummary(toTitleCase(futureWordsRaw || ""));
 
-      // yearly points for line chart
       let yearlyPoints: SipPoint[] = [];
 
       if (Array.isArray(data.yearlyPoints) && data.yearlyPoints.length > 0) {
-        // use series from backend (preferred)
         yearlyPoints = data.yearlyPoints.map((p) => ({
           year: p.year,
           invested: p.invested,
           total: p.total,
         }));
       } else {
-        // fallback: compute on frontend if backend only returns totals
         const monthlyRate = r / 12 / 100;
         for (let year = 1; year <= t; year++) {
           const n = year * 12;
@@ -260,7 +254,6 @@ export default function SipCalculator() {
 
       setLineData(yearlyPoints);
 
-      // bar data
       setBarData([
         {
           name: "SIP",
@@ -300,7 +293,7 @@ export default function SipCalculator() {
 
   return (
     <Box>
-      {/* TOP: CALCULATOR + EXPLANATION (50 / 50) */}
+      {/* TOP SECTION */}
       <Paper sx={{ p: 4, mb: 4 }}>
         <Box
           sx={{
@@ -309,7 +302,7 @@ export default function SipCalculator() {
             gap: 4,
           }}
         >
-          {/* LEFT – FORM */}
+          {/* LEFT FORM */}
           <Box
             sx={{
               flex: { xs: "1 1 auto", md: "0 0 50%" },
@@ -384,35 +377,27 @@ export default function SipCalculator() {
             </Stack>
           </Box>
 
-          {/* RIGHT – HOW IT WORKS + FORMULA + SUMMARY */}
-          <Box
-            sx={{
-              flex: { xs: "1 1 auto", md: "0 0 50%" },
-            }}
-          >
-            <Stack spacing={1.5} sx={{ height: "100%" }}>
+          {/* RIGHT SIDE — EXPLANATION + SUMMARY */}
+          <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 50%" } }}>
+            <Stack spacing={1.5}>
               <Typography variant="subtitle1">
                 How this SIP calculator works
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                This SIP (Systematic Investment Plan) calculator assumes:
+                This SIP calculator assumes:
               </Typography>
 
               <ul style={{ marginTop: 0, paddingLeft: "1.2rem" }}>
-                <li>You invest a fixed amount every month (monthly SIP).</li>
-                <li>
-                  Returns are compounded monthly at the annual rate you enter.
-                </li>
-                <li>
-                  It shows total amount invested, estimated future value and
-                  wealth created (profit).
-                </li>
+                <li>You invest monthly.</li>
+                <li>Returns compound monthly.</li>
+                <li>Shows invested amount, future value, and gains.</li>
               </ul>
 
               <Typography variant="body2" color="text.secondary">
-                Formula used:
+                Formula:
               </Typography>
+
               <Box
                 sx={{
                   fontFamily: "monospace",
@@ -424,10 +409,6 @@ export default function SipCalculator() {
               >
                 FV = A × [((1 + i)^n − 1) / i] × (1 + i)
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                where A = monthly SIP, i = monthly rate (annual % ÷ 12 ÷ 100),
-                n = total months (years × 12).
-              </Typography>
 
               <Divider sx={{ my: 1.5 }} />
 
@@ -441,10 +422,11 @@ export default function SipCalculator() {
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   Summary
                 </Typography>
+
                 <Typography variant="body2" color="text.secondary">
                   {hasResult
                     ? summary
-                    : "Enter your SIP details and click Calculate to see the projected value and profit."}
+                    : "Enter SIP details to calculate future value."}
                 </Typography>
 
                 {hasResult && (
@@ -458,9 +440,7 @@ export default function SipCalculator() {
                           mt: 1,
                         }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Invested amount in words:
-                        </Box>{" "}
+                        <strong>Invested amount:</strong>{" "}
                         {investedWordsSummary} Rupees.
                       </Typography>
                     )}
@@ -474,9 +454,7 @@ export default function SipCalculator() {
                           mt: 1,
                         }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Wealth gained in words:
-                        </Box>{" "}
+                        <strong>Wealth gained:</strong>{" "}
                         {gainWordsSummary} Rupees.
                       </Typography>
                     )}
@@ -490,9 +468,7 @@ export default function SipCalculator() {
                           mt: 1,
                         }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Future value in words (approx):
-                        </Box>{" "}
+                        <strong>Future value:</strong>{" "}
                         {futureWordsSummary} Rupees.
                       </Typography>
                     )}
@@ -504,7 +480,7 @@ export default function SipCalculator() {
         </Box>
       </Paper>
 
-      {/* BOTTOM: CHARTS + SEO/AI-FRIENDLY TABLES */}
+      {/* BOTTOM: CHARTS + TABLES */}
       {hasResult && (
         <Paper sx={{ p: 4 }}>
           <Box
@@ -514,29 +490,24 @@ export default function SipCalculator() {
               gap: 4,
             }}
           >
-            {/* LEFT CHART – LINE */}
-            <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
+            {/* LINE CHART */}
+            <Box sx={{ flex: "1 1 0" }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 SIP growth over time (yearly)
               </Typography>
-              <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
-                <ResponsiveContainer width="100%" height="100%">
+
+              <Box sx={{ width: "100%", height: 300 }}>
+                <ResponsiveContainer>
                   <LineChart data={lineData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
                     <YAxis />
-                    <Tooltip
-                      formatter={(v: number) =>
-                        `₹${v.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}`
-                      }
-                    />
+                    <Tooltip />
                     <Legend />
                     <Line
                       type="monotone"
                       dataKey="invested"
-                      name="Invested amount"
+                      name="Invested"
                       stroke="#94a3b8"
                       strokeWidth={2}
                     />
@@ -551,130 +522,73 @@ export default function SipCalculator() {
                 </ResponsiveContainer>
               </Box>
 
-              {/* Caption + Table for SEO/AI */}
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 2, mb: 1 }}
-              >
-                This table shows how your SIP investment grows year by year,
-                comparing total amount invested and estimated future value.
+              {/* SEO table */}
+              <Typography sx={{ mt: 2 }} variant="body2" color="text.secondary">
+                Year-by-year SIP growth table
               </Typography>
-              <Box sx={{ overflowX: "auto" }}>
-                <Table
-                  size="small"
-                  aria-label="SIP growth table: year, invested amount and estimated value"
-                >
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Year</TableCell>
-                      <TableCell align="right">Total Invested (₹)</TableCell>
+
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Year</TableCell>
+                    <TableCell align="right">Invested (₹)</TableCell>
+                    <TableCell align="right">Future Value (₹)</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {lineData.map((row) => (
+                    <TableRow key={row.year}>
+                      <TableCell>{row.year}</TableCell>
                       <TableCell align="right">
-                        Estimated Value (₹)
+                        {row.invested.toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell align="right">
+                        {row.total.toLocaleString("en-IN")}
                       </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {lineData.map((row) => (
-                      <TableRow key={row.year}>
-                        <TableCell>{row.year}</TableCell>
-                        <TableCell align="right">
-                          {row.invested.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
-                        </TableCell>
-                        <TableCell align="right">
-                          {row.total.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
+                  ))}
+                </TableBody>
+              </Table>
             </Box>
 
-            {/* RIGHT CHART – BAR */}
-            <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
+            {/* BAR CHART */}
+            <Box sx={{ flex: "1 1 0" }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 Total invested vs wealth gained
               </Typography>
-              <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
-                <ResponsiveContainer width="100%" height="100%">
+
+              <Box sx={{ width: "100%", height: 300 }}>
+                <ResponsiveContainer>
                   <BarChart data={barData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip
-                      formatter={(v: number) =>
-                        `₹${v.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}`
-                      }
-                    />
+                    <Tooltip />
                     <Legend />
                     <Bar
                       dataKey="Invested"
-                      name="Invested amount"
                       fill="#38bdf8"
+                      name="Invested amount"
                     />
-                    <Bar dataKey="Gain" name="Total gain" fill="#0f766e" />
+                    <Bar dataKey="Gain" fill="#0f766e" name="Gain" />
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
 
-              {/* Caption + Table for SEO/AI */}
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 2, mb: 1 }}
-              >
-                This table compares the total amount you invest through SIP with
-                the estimated wealth gained at the end of the period.
+              {/* SEO table */}
+              <Typography sx={{ mt: 2 }} variant="body2" color="text.secondary">
+                Total invested vs wealth gain
               </Typography>
-              <Box sx={{ overflowX: "auto" }}>
-                <Table
-                  size="small"
-                  aria-label="SIP invested vs grown vs gain table"
-                >
-                  <TableHead>
-                    <TableRow>
-                      <TableCell align="right">Invested (₹)</TableCell>
-                      <TableCell align="right">Grown To (₹)</TableCell>
-                      <TableCell align="right">Gain (₹)</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {barData.map((row, index) => {
-                      const grownTo = row.Invested + row.Gain;
-                      return (
-                        <TableRow key={index}>
-                          <TableCell align="right">
-                            {row.Invested.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </TableCell>
-                          <TableCell align="right">
-                            {grownTo.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </TableCell>
-                          <TableCell align="right">
-                            {row.Gain.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </Box>
-            </Box>
-          </Box>
-        </Paper>
-      )}
-    </Box>
-  );
-}
+
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell align="right">Invested (₹)</TableCell>
+                    <TableCell align="right">Grown To (₹)</TableCell>
+                    <TableCell align="right">Gain (₹)</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {barData.map((row, i) => (
+                    <TableRow key={i}>
+                      <TableCell

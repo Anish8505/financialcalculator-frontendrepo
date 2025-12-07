@@ -28,6 +28,11 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- BASE URL ---------- */
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type SwpPoint = {
@@ -191,7 +196,7 @@ export default function SwpCalculator() {
         years: t.toString(),
       });
 
-      const url = `http://localhost:8080/api/swp?${params.toString()}`;
+      const url = `${API_BASE_URL}/swp?${params.toString()}`;
       console.log("SWP API URL:", url);
 
       const response = await fetch(url);

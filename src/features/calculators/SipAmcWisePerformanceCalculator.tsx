@@ -26,6 +26,11 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- base URL ---------- */
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type SipAmcWiseRow = {
@@ -109,7 +114,7 @@ export default function SipAmcWisePerformanceCalculator() {
       });
 
       const res = await fetch(
-        `http://localhost:8080/api/mf/sip-amc-wise?${params.toString()}`
+        `${API_BASE_URL}/mf/sip-amc-wise?${params.toString()}`
       );
 
       if (!res.ok) {

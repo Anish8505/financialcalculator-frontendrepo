@@ -27,6 +27,10 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- dynamic API base URL ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type EmiPoint = {
@@ -59,7 +63,7 @@ type EmiApiResponse = {
   yearlyPoints?: EmiYearPointApi[];
 };
 
-/* ---------- helpers (same style as SIP/FD) ---------- */
+/* ---------- helpers ---------- */
 
 const formatIndianNumber = (value: string) => {
   if (!value) return "";
@@ -108,12 +112,8 @@ const numberToWords = (num: number): string => {
     "ninety",
   ];
 
-  const twoDigits = (n: number): string => {
-    if (n < 20) return a[n];
-    return (
-      b[Math.floor(n / 10)] + (n % 10 ? " " + a[Math.floor(n % 10)] : "")
-    );
-  };
+  const twoDigits = (n: number): string =>
+    n < 20 ? a[n] : b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
 
   const threeDigits = (n: number): string => {
     if (n === 0) return "";
@@ -136,10 +136,9 @@ const numberToWords = (num: number): string => {
   for (const u of units) {
     if (num >= u.value) {
       const chunk = Math.floor(num / u.value);
-      if (chunk > 0) {
-        words += threeDigits(chunk) + (u.label ? " " + u.label : "") + " ";
-        num = num % u.value;
-      }
+      words +=
+        threeDigits(chunk) + (u.label ? " " + u.label : "") + " ";
+      num = num % u.value;
     }
   }
 
@@ -149,7 +148,7 @@ const numberToWords = (num: number): string => {
 const toTitleCase = (str: string): string =>
   str.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
 
-/* ------------------------------- component ------------------------------- */
+/* ----------------------------- Component ----------------------------- */
 
 export default function EmiCalculator() {
   const [amount, setAmount] = useState("");
@@ -158,7 +157,8 @@ export default function EmiCalculator() {
 
   const [summary, setSummary] = useState("");
   const [emiWordsSummary, setEmiWordsSummary] = useState("");
-  const [interestWordsSummary, setInterestWordsSummary] = useState("");
+  const [interestWordsSummary, setInterestWordsSummary] =
+    useState("");
 
   const [lineData, setLineData] = useState<EmiPoint[]>([]);
   const [barData, setBarData] = useState<BarPoint[]>([]);
@@ -188,14 +188,11 @@ export default function EmiCalculator() {
         years: t.toString(),
       });
 
-      const url = `http://localhost:8080/api/emi?${params.toString()}`;
+      const url = `${API_BASE_URL}/emi?${params.toString()}`;
       console.log("EMI API URL:", url);
 
       const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error("API error");
-      }
+      if (!response.ok) throw new Error("API error");
 
       const data: EmiApiResponse = await response.json();
 
@@ -213,24 +210,20 @@ export default function EmiCalculator() {
         )} is interest.`
       );
 
-      const emiWordsRaw = numberToWords(Math.round(emi));
-      const interestWordsRaw = numberToWords(Math.round(totalInterest));
-
-      setEmiWordsSummary(emiWordsRaw ? toTitleCase(emiWordsRaw) : "");
+      setEmiWordsSummary(
+        toTitleCase(numberToWords(Math.round(emi)))
+      );
       setInterestWordsSummary(
-        interestWordsRaw ? toTitleCase(interestWordsRaw) : ""
+        toTitleCase(numberToWords(Math.round(totalInterest)))
       );
 
-      let yearlyPoints: EmiPoint[] = [];
-
-      if (Array.isArray(data.yearlyPoints) && data.yearlyPoints.length > 0) {
-        yearlyPoints = data.yearlyPoints.map((p) => ({
+      const yearlyPoints =
+        data.yearlyPoints?.map((p) => ({
           year: p.year,
           principalPaid: p.principalPaid,
           interestPaid: p.interestPaid,
           balanceOutstanding: p.balanceOutstanding,
-        }));
-      }
+        })) || [];
 
       setLineData(yearlyPoints);
 
@@ -261,7 +254,8 @@ export default function EmiCalculator() {
     ? toTitleCase(numberToWords(amountNumeric))
     : "";
   const rateWords = annualRateNumeric
-    ? toTitleCase(numberToWords(annualRateNumeric)) + " Percent Per Annum"
+    ? toTitleCase(numberToWords(annualRateNumeric)) +
+      " Percent Per Annum"
     : "";
   const yearsWords = yearsNumeric
     ? toTitleCase(numberToWords(yearsNumeric)) +
@@ -270,7 +264,7 @@ export default function EmiCalculator() {
 
   return (
     <Box>
-      {/* TOP: CALCULATOR + EXPLANATION */}
+      {/* TOP CARD */}
       <Paper sx={{ p: 4, mb: 4 }}>
         <Box
           sx={{
@@ -279,26 +273,25 @@ export default function EmiCalculator() {
             gap: 4,
           }}
         >
-          {/* LEFT – FORM */}
+          {/* LEFT FORM */}
           <Box
             sx={{
               flex: { xs: "1 1 auto", md: "0 0 50%" },
-              "& .MuiTextField-root": {
-                width: "100%",
-              },
+              "& .MuiTextField-root": { width: "100%" },
             }}
           >
             <Stack spacing={2}>
               <TextField
                 label="Loan Amount (₹)"
-                type="text"
                 value={amount}
-                onChange={(e) => setAmount(formatIndianNumber(e.target.value))}
+                onChange={(e) =>
+                  setAmount(formatIndianNumber(e.target.value))
+                }
               />
               {amountWords && (
                 <Typography
                   variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: 600, mt: -0.5 }}
+                  sx={{ color: "text.secondary", fontWeight: 600 }}
                 >
                   {amountWords}
                 </Typography>
@@ -313,7 +306,7 @@ export default function EmiCalculator() {
               {rateWords && (
                 <Typography
                   variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: 600, mt: -0.5 }}
+                  sx={{ color: "text.secondary", fontWeight: 600 }}
                 >
                   {rateWords}
                 </Typography>
@@ -328,7 +321,7 @@ export default function EmiCalculator() {
               {yearsWords && (
                 <Typography
                   variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: 600, mt: -0.5 }}
+                  sx={{ color: "text.secondary", fontWeight: 600 }}
                 >
                   {yearsWords}
                 </Typography>
@@ -340,47 +333,22 @@ export default function EmiCalculator() {
             </Stack>
           </Box>
 
-          {/* RIGHT – EXPLANATION + SUMMARY */}
+          {/* RIGHT SUMMARY */}
           <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 50%" } }}>
-            <Stack spacing={1.5} sx={{ height: "100%" }}>
+            <Stack spacing={1.5}>
               <Typography variant="subtitle1">
                 How this EMI calculator works
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                This EMI (Equated Monthly Instalment) calculator assumes:
+                This EMI calculator assumes:
               </Typography>
 
               <ul style={{ marginTop: 0, paddingLeft: "1.2rem" }}>
-                <li>You borrow a fixed amount (loan principal).</li>
-                <li>
-                  Interest is charged monthly based on the annual rate you
-                  enter.
-                </li>
-                <li>
-                  Your EMI (monthly instalment) remains constant throughout the
-                  tenure.
-                </li>
+                <li>Fixed loan principal amount.</li>
+                <li>Monthly compounding interest.</li>
+                <li>Equal EMI throughout the loan tenure.</li>
               </ul>
-
-              <Typography variant="body2" color="text.secondary">
-                Formula used:
-              </Typography>
-              <Box
-                sx={{
-                  fontFamily: "monospace",
-                  fontSize: 13,
-                  bgcolor: "rgba(15,118,110,0.04)",
-                  borderRadius: 1,
-                  p: 1.2,
-                }}
-              >
-                EMI = P × r × (1 + r)ⁿ / ((1 + r)ⁿ − 1)
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                where P = loan amount, r = monthly interest rate (annual % ÷ 12
-                ÷ 100), n = total number of EMIs (months).
-              </Typography>
 
               <Divider sx={{ my: 1.5 }} />
 
@@ -391,48 +359,30 @@ export default function EmiCalculator() {
                   p: 1.5,
                 }}
               >
-                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                  Summary
-                </Typography>
+                <Typography variant="subtitle2">Summary</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {hasResult
                     ? summary
-                    : "Enter your loan details and click Calculate to see your EMI, total payment and total interest."}
+                    : "Enter details to calculate EMI, interest, repayment chart."}
                 </Typography>
 
                 {hasResult && (
                   <>
-                    {emiWordsSummary && (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          fontWeight: 500,
-                          mt: 1,
-                        }}
-                      >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          EMI in words (approx):
-                        </Box>{" "}
-                        {emiWordsSummary} Rupees Per Month.
-                      </Typography>
-                    )}
+                    <Typography
+                      variant="body2"
+                      sx={{ mt: 1, fontWeight: 500 }}
+                    >
+                      <strong>EMI (in words):</strong>{" "}
+                      {emiWordsSummary} Rupees Per Month
+                    </Typography>
 
-                    {interestWordsSummary && (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          fontWeight: 500,
-                          mt: 1,
-                        }}
-                      >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Total interest in words (approx):
-                        </Box>{" "}
-                        {interestWordsSummary} Rupees.
-                      </Typography>
-                    )}
+                    <Typography
+                      variant="body2"
+                      sx={{ mt: 1, fontWeight: 500 }}
+                    >
+                      <strong>Total Interest (in words):</strong>{" "}
+                      {interestWordsSummary} Rupees
+                    </Typography>
                   </>
                 )}
               </Box>
@@ -441,7 +391,7 @@ export default function EmiCalculator() {
         </Box>
       </Paper>
 
-      {/* BOTTOM: CHARTS + TABLES */}
+      {/* BOTTOM CHARTS */}
       {hasResult && (
         <Paper sx={{ p: 4 }}>
           <Box
@@ -451,174 +401,49 @@ export default function EmiCalculator() {
               gap: 4,
             }}
           >
-            {/* LEFT CHART – LINE: balance over time */}
+            {/* LEFT – BALANCE CHART */}
             <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Loan balance over time (yearly)
+                Balance over time (yearly)
               </Typography>
-              <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
-                <ResponsiveContainer width="100%" height="100%">
+              <Box sx={{ width: "100%", height: 320 }}>
+                <ResponsiveContainer>
                   <LineChart data={lineData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
                     <YAxis />
-                    <Tooltip
-                      formatter={(v: number) =>
-                        `₹${v.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}`
-                      }
-                    />
+                    <Tooltip />
                     <Legend />
                     <Line
                       type="monotone"
                       dataKey="balanceOutstanding"
-                      name="Outstanding balance"
                       stroke="#0f766e"
+                      name="Remaining balance"
                       strokeWidth={3}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="principalPaid"
-                      name="Principal repaid (cumulative)"
-                      stroke="#94a3b8"
-                      strokeWidth={2}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
-
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 2, mb: 1 }}
-              >
-                This table shows how much principal you have repaid and how much
-                loan balance is still outstanding at the end of each year.
-              </Typography>
-              <Box sx={{ overflowX: "auto" }}>
-                <Table
-                  size="small"
-                  aria-label="EMI loan yearly principal vs balance table"
-                >
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Year</TableCell>
-                      <TableCell align="right">
-                        Principal Repaid (₹, cumulative)
-                      </TableCell>
-                      <TableCell align="right">
-                        Interest Paid (₹, cumulative)
-                      </TableCell>
-                      <TableCell align="right">
-                        Balance Outstanding (₹)
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {lineData.map((row) => (
-                      <TableRow key={row.year}>
-                        <TableCell>{row.year}</TableCell>
-                        <TableCell align="right">
-                          {row.principalPaid.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
-                        </TableCell>
-                        <TableCell align="right">
-                          {row.interestPaid.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
-                        </TableCell>
-                        <TableCell align="right">
-                          {row.balanceOutstanding.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
             </Box>
 
-            {/* RIGHT CHART – BAR: principal vs interest */}
+            {/* RIGHT – PRINCIPAL VS INTEREST */}
             <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Principal vs interest – total cost of loan
+                Principal vs Interest (Total Cost)
               </Typography>
-              <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
-                <ResponsiveContainer width="100%" height="100%">
+
+              <Box sx={{ width: "100%", height: 320 }}>
+                <ResponsiveContainer>
                   <BarChart data={barData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip
-                      formatter={(v: number) =>
-                        `₹${v.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}`
-                      }
-                    />
+                    <Tooltip />
                     <Legend />
-                    <Bar
-                      dataKey="Principal"
-                      name="Principal amount"
-                      fill="#38bdf8"
-                    />
-                    <Bar
-                      dataKey="Interest"
-                      name="Total interest"
-                      fill="#0f766e"
-                    />
+                    <Bar dataKey="Principal" fill="#38bdf8" />
+                    <Bar dataKey="Interest" fill="#0f766e" />
                   </BarChart>
                 </ResponsiveContainer>
-              </Box>
-
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 2, mb: 1 }}
-              >
-                This table compares how much you borrow (principal) against how
-                much you pay as interest over the loan tenure.
-              </Typography>
-              <Box sx={{ overflowX: "auto" }}>
-                <Table
-                  size="small"
-                  aria-label="EMI principal vs interest table"
-                >
-                  <TableHead>
-                    <TableRow>
-                      <TableCell align="right">Principal (₹)</TableCell>
-                      <TableCell align="right">Interest (₹)</TableCell>
-                      <TableCell align="right">Total Payment (₹)</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {barData.map((row, index) => {
-                      const total = row.Principal + row.Interest;
-                      return (
-                        <TableRow key={index}>
-                          <TableCell align="right">
-                            {row.Principal.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </TableCell>
-                          <TableCell align="right">
-                            {row.Interest.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </TableCell>
-                          <TableCell align="right">
-                            {total.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
               </Box>
             </Box>
           </Box>

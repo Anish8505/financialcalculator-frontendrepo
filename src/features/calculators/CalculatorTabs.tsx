@@ -1,11 +1,17 @@
 // src/features/calculators/CalculatorTabs.tsx
 import { useState } from "react";
 import { Box, Paper, Tab, Tabs } from "@mui/material";
+
+// Import calculators
 import SipCalculator from "./SipCalculator";
 import FdCalculator from "./FdCalculator";
 
 export default function CalculatorTabs() {
   const [tab, setTab] = useState(0);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTab(newValue);
+  };
 
   return (
     <Paper
@@ -17,9 +23,10 @@ export default function CalculatorTabs() {
         flexDirection: "column",
       }}
     >
+      {/* Top tabs */}
       <Tabs
         value={tab}
-        onChange={(_, v) => setTab(v)}
+        onChange={handleTabChange}
         variant="fullWidth"
         sx={{ mb: 2 }}
       >
@@ -27,6 +34,7 @@ export default function CalculatorTabs() {
         <Tab label="FD Calculator" />
       </Tabs>
 
+      {/* Selected calculator */}
       <Box sx={{ flex: 1 }}>
         {tab === 0 && <SipCalculator />}
         {tab === 1 && <FdCalculator />}

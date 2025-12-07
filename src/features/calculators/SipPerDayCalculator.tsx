@@ -1,3 +1,4 @@
+// src/features/calculators/SipPerDayCalculator.tsx
 import { useState } from "react";
 import {
   Box,
@@ -19,6 +20,11 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+
+/* -------- BASE URL (only change you needed) -------- */
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
 /* -------- types -------- */
 
@@ -90,8 +96,9 @@ export default function SipPerDayCalculator() {
         rate: rateNum.toString(),
       });
 
+      // 🔗 UPDATED URL
       const res = await fetch(
-        `http://localhost:8080/api/sip-per-day?${params.toString()}`
+        `${API_BASE_URL}/sip-per-day?${params.toString()}`
       );
 
       if (!res.ok) {
@@ -190,30 +197,23 @@ export default function SipPerDayCalculator() {
             </Stack>
           </Box>
 
-          {/* RIGHT: EXPLANATION + SUMMARY BOX */}
+          {/* RIGHT: SUMMARY */}
           <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 55%" } }}>
             <Stack spacing={1.5}>
               <Typography variant="subtitle1">
                 What is a SIP Per Day calculator?
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                SIP Per Day shows how much you need to save{" "}
-                <strong>every day</strong> to reach a target corpus using mutual
-                fund SIPs. Instead of directly choosing a SIP amount, you start
-                from your goal (for example ₹1 crore) and work backwards.
-              </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                Just enter your goal amount, investment period and expected
-                annual return. The calculator tells you:
+                SIP Per Day tells you how much you need to save{" "}
+                <strong>every day</strong> to reach your financial goal using
+                SIP.
               </Typography>
+
               <ul style={{ marginTop: 0, paddingLeft: "1.2rem" }}>
-                <li>Required SIP per month.</li>
-                <li>
-                  Approximate saving needed per day for that SIP (30 days
-                  assumed).
-                </li>
-                <li>Total amount you will invest over the years.</li>
+                <li>Required monthly SIP</li>
+                <li>Required daily saving (~30-day assumption)</li>
+                <li>Total investment amount</li>
               </ul>
 
               <Divider sx={{ my: 1.5 }} />
@@ -228,10 +228,11 @@ export default function SipPerDayCalculator() {
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   SIP per day summary
                 </Typography>
+
                 <Typography variant="body2" color="text.secondary">
                   {hasResult
                     ? response?.explanation
-                    : "Enter your goal, duration and expected return to see how much you should invest per day and per month."}
+                    : "Enter your goal to calculate monthly SIP and daily saving needed."}
                 </Typography>
 
                 {hasResult && (
@@ -240,14 +241,14 @@ export default function SipPerDayCalculator() {
                     color="text.secondary"
                     sx={{ mt: 1 }}
                   >
-                    <strong>Required SIP:</strong>{" "}
-                    ₹{formatIndian(response!.requiredMonthlySip)} per month{" "}
-                    (≈ ₹
-                    {formatIndian(response!.requiredDailySaving)} per day) •{" "}
-                    <strong>Total Invested:</strong> ₹
-                    {formatIndian(response!.totalInvestedAmount)} •{" "}
-                    <strong>Target Corpus:</strong> ₹
-                    {formatIndian(response!.expectedMaturityAmount)}
+                    <strong>Monthly SIP:</strong>{" "}
+                    ₹{formatIndian(response!.requiredMonthlySip)} •{" "}
+                    <strong>Daily Saving:</strong>{" "}
+                    ₹{formatIndian(response!.requiredDailySaving)} •{" "}
+                    <strong>Total Invested:</strong>{" "}
+                    ₹{formatIndian(response!.totalInvestedAmount)} •{" "}
+                    <strong>Target Corpus:</strong>{" "}
+                    ₹{formatIndian(response!.expectedMaturityAmount)}
                   </Typography>
                 )}
               </Box>
@@ -256,12 +257,13 @@ export default function SipPerDayCalculator() {
         </Box>
       </Paper>
 
-      {/* BOTTOM: CHART – YEARLY GROWTH */}
+      {/* BOTTOM: CHART */}
       {hasResult && response && (
         <Paper sx={{ p: 4 }}>
           <Typography variant="subtitle1" sx={{ mb: 2 }}>
             Yearly growth of your SIP (required amount)
           </Typography>
+
           <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={response.yearlyPoints}>
@@ -301,7 +303,7 @@ export default function SipPerDayCalculator() {
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             This chart shows how your total investment and estimated corpus grow
-            year by year if you consistently invest the required SIP amount.
+            each year if you follow the required SIP.
           </Typography>
         </Paper>
       )}

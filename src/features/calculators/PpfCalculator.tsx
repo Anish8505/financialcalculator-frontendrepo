@@ -27,6 +27,10 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- API BASE URL ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type PpfPoint = {
@@ -41,7 +45,6 @@ type BarPoint = {
   Interest: number;
 };
 
-// ✅ match backend JSON exactly
 type PpfApiResponse = {
   yearlyInvestment: number;
   tenureYears: number;
@@ -50,7 +53,7 @@ type PpfApiResponse = {
   totalInterest: number;
 };
 
-/* ---------- helpers (same style as others) ---------- */
+/* ---------- helpers ---------- */
 
 const formatIndianNumber = (value: string) => {
   if (!value) return "";
@@ -101,9 +104,7 @@ const numberToWords = (num: number): string => {
 
   const twoDigits = (n: number): string => {
     if (n < 20) return a[n];
-    return (
-      b[Math.floor(n / 10)] + (n % 10 ? " " + a[Math.floor(n % 10)] : "")
-    );
+    return b[Math.floor(n / 10)] + (n % 10 ? " " + a[Math.floor(n % 10)] : "");
   };
 
   const threeDigits = (n: number): string => {
@@ -181,19 +182,14 @@ export default function PpfCalculator() {
         years: t.toString(),
       });
 
-      const url = `http://localhost:8080/api/ppf?${params.toString()}`;
-      console.log("PPF API URL:", url);
-
-      const response = await fetch(url);
+      const response = await fetch(`${API_BASE_URL}/ppf?${params}`);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
 
       const data: PpfApiResponse = await response.json();
-      console.log("PPF API data:", data);
 
-      // ✅ map to your JSON keys
       const invested = data.totalInvestment;
       const maturity = data.maturityAmount;
       const interest = data.totalInterest;
@@ -209,41 +205,29 @@ export default function PpfCalculator() {
           "en-IN"
         )}). At maturity, you may receive about ₹${maturityRounded.toLocaleString(
           "en-IN"
-        )}, of which ₹${interestRounded.toLocaleString(
-          "en-IN"
-        )} is interest.`
+        )}, of which ₹${interestRounded.toLocaleString("en-IN")} is interest.`
       );
-
-      const investedWordsRaw = numberToWords(Math.round(invested));
-      const interestWordsRaw = numberToWords(interestRounded);
-      const maturityWordsRaw = numberToWords(maturityRounded);
 
       setInvestedWordsSummary(
-        investedWordsRaw ? toTitleCase(investedWordsRaw) : ""
+        toTitleCase(numberToWords(Math.round(invested)))
       );
-      setInterestWordsSummary(
-        interestWordsRaw ? toTitleCase(interestWordsRaw) : ""
-      );
-      setMaturityWordsSummary(
-        maturityWordsRaw ? toTitleCase(maturityWordsRaw) : ""
-      );
+      setInterestWordsSummary(toTitleCase(numberToWords(interestRounded)));
+      setMaturityWordsSummary(toTitleCase(numberToWords(maturityRounded)));
 
-      // ----- yearly points for charts (frontend fallback) -----
+      // Fallback calculation for chart
       const yearlyPoints: PpfPoint[] = [];
       const rateDec = r / 100;
       const nYears = tenureYears || t;
 
       for (let year = 1; year <= nYears; year++) {
-        const k = year;
         const totalYear =
           yearlyAmount *
-          ((Math.pow(1 + rateDec, k) - 1) / rateDec) *
+          ((Math.pow(1 + rateDec, year) - 1) / rateDec) *
           (1 + rateDec);
-        const investedYear = yearlyAmount * k;
 
         yearlyPoints.push({
           year,
-          invested: investedYear,
+          invested: yearlyAmount * year,
           total: totalYear,
         });
       }
@@ -287,7 +271,7 @@ export default function PpfCalculator() {
 
   return (
     <Box>
-      {/* TOP: CALCULATOR + EXPLANATION */}
+      {/* TOP CARD */}
       <Paper sx={{ p: 4, mb: 4 }}>
         <Box
           sx={{
@@ -296,7 +280,7 @@ export default function PpfCalculator() {
             gap: 4,
           }}
         >
-          {/* LEFT – FORM */}
+          {/* LEFT FORM */}
           <Box
             sx={{
               flex: { xs: "1 1 auto", md: "0 0 50%" },
@@ -306,45 +290,33 @@ export default function PpfCalculator() {
             <Stack spacing={2}>
               <TextField
                 label="Yearly PPF Contribution (₹)"
-                type="text"
                 value={yearly}
                 onChange={(e) => setYearly(formatIndianNumber(e.target.value))}
               />
               {yearlyWords && (
-                <Typography
-                  variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: 600, mt: -0.5 }}
-                >
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   {yearlyWords}
                 </Typography>
               )}
 
               <TextField
                 label="Interest Rate (p.a. %)"
-                type="number"
                 value={annualRate}
                 onChange={(e) => setAnnualRate(e.target.value)}
               />
               {rateWords && (
-                <Typography
-                  variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: 600, mt: -0.5 }}
-                >
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   {rateWords}
                 </Typography>
               )}
 
               <TextField
                 label="Tenure (years)"
-                type="number"
                 value={years}
                 onChange={(e) => setYears(e.target.value)}
               />
               {yearsWords && (
-                <Typography
-                  variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: 600, mt: -0.5 }}
-                >
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   {yearsWords}
                 </Typography>
               )}
@@ -355,49 +327,19 @@ export default function PpfCalculator() {
             </Stack>
           </Box>
 
-          {/* RIGHT – EXPLANATION + SUMMARY */}
+          {/* RIGHT SUMMARY */}
           <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 50%" } }}>
-            <Stack spacing={1.5} sx={{ height: "100%" }}>
+            <Stack spacing={1.5}>
               <Typography variant="subtitle1">
                 How this PPF calculator works
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                This PPF calculator assumes:
+                This calculator shows total investment, interest earned, and final
+                maturity value based on yearly contributions and compound interest.
               </Typography>
 
-              <ul style={{ marginTop: 0, paddingLeft: "1.2rem" }}>
-                <li>You invest a fixed amount every year in PPF.</li>
-                <li>
-                  Interest is compounded annually at the rate you enter (simple
-                  planning approximation).
-                </li>
-                <li>
-                  It shows your total investment, estimated maturity amount and
-                  interest earned.
-                </li>
-              </ul>
-
-              <Typography variant="body2" color="text.secondary">
-                Formula used (annuity-due style):
-              </Typography>
-              <Box
-                sx={{
-                  fontFamily: "monospace",
-                  fontSize: 13,
-                  bgcolor: "rgba(15,118,110,0.04)",
-                  borderRadius: 1,
-                  p: 1.2,
-                }}
-              >
-                M = A × [((1 + r)ⁿ − 1) / r] × (1 + r)
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                where A = yearly contribution, r = annual interest rate
-                (decimal), n = number of years.
-              </Typography>
-
-              <Divider sx={{ my: 1.5 }} />
+              <Divider />
 
               <Box
                 sx={{
@@ -406,64 +348,28 @@ export default function PpfCalculator() {
                   p: 1.5,
                 }}
               >
-                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                  Summary
-                </Typography>
+                <Typography variant="subtitle2">Summary</Typography>
+
                 <Typography variant="body2" color="text.secondary">
                   {hasResult
                     ? summary
-                    : "Enter your PPF details and click Calculate to see your maturity amount and interest earned."}
+                    : "Enter PPF details above to see maturity value."}
                 </Typography>
 
                 {hasResult && (
                   <>
-                    {investedWordsSummary && (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          fontWeight: 500,
-                          mt: 1,
-                        }}
-                      >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Total investment in words:
-                        </Box>{" "}
-                        {investedWordsSummary} Rupees.
-                      </Typography>
-                    )}
-
-                    {interestWordsSummary && (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          fontWeight: 500,
-                          mt: 1,
-                        }}
-                      >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Interest earned in words:
-                        </Box>{" "}
-                        {interestWordsSummary} Rupees.
-                      </Typography>
-                    )}
-
-                    {maturityWordsSummary && (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          fontWeight: 500,
-                          mt: 1,
-                        }}
-                      >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Maturity amount in words (approx):
-                        </Box>{" "}
-                          {maturityWordsSummary} Rupees.
-                      </Typography>
-                    )}
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <strong>Total investment:</strong>{" "}
+                      {investedWordsSummary} Rupees
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Interest earned:</strong>{" "}
+                      {interestWordsSummary} Rupees
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Maturity amount:</strong>{" "}
+                      {maturityWordsSummary} Rupees
+                    </Typography>
                   </>
                 )}
               </Box>
@@ -472,7 +378,7 @@ export default function PpfCalculator() {
         </Box>
       </Paper>
 
-      {/* BOTTOM: CHARTS + TABLES */}
+      {/* CHART + TABLE */}
       {hasResult && (
         <Paper sx={{ p: 4 }}>
           <Box
@@ -482,164 +388,43 @@ export default function PpfCalculator() {
               gap: 4,
             }}
           >
-            {/* LEFT CHART – LINE */}
-            <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
+            {/* LINE CHART */}
+            <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 PPF growth over time (yearly)
               </Typography>
-              <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
-                <ResponsiveContainer width="100%" height="100%">
+              <Box sx={{ height: 320 }}>
+                <ResponsiveContainer>
                   <LineChart data={lineData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
                     <YAxis />
-                    <Tooltip
-                      formatter={(v: number) =>
-                        `₹${v.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}`
-                      }
-                    />
+                    <Tooltip />
                     <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="invested"
-                      name="Total investment"
-                      stroke="#94a3b8"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      name="Estimated value"
-                      stroke="#0f766e"
-                      strokeWidth={3}
-                    />
+                    <Line dataKey="invested" stroke="#94a3b8" />
+                    <Line dataKey="total" stroke="#0f766e" />
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
-
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 2, mb: 1 }}
-              >
-                This table shows how your PPF balance grows year by year,
-                comparing total amount invested and estimated maturity value.
-              </Typography>
-              <Box sx={{ overflowX: "auto" }}>
-                <Table
-                  size="small"
-                  aria-label="PPF growth table: year, investment and estimated value"
-                >
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Year</TableCell>
-                      <TableCell align="right">Total Investment (₹)</TableCell>
-                      <TableCell align="right">
-                        Estimated Value (₹)
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {lineData.map((row) => (
-                      <TableRow key={row.year}>
-                        <TableCell>{row.year}</TableCell>
-                        <TableCell align="right">
-                          {row.invested.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
-                        </TableCell>
-                        <TableCell align="right">
-                          {row.total.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
             </Box>
 
-            {/* RIGHT CHART – BAR */}
-            <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
+            {/* BAR CHART */}
+            <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Investment vs interest earned (PPF)
+                Investment vs Interest
               </Typography>
-              <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
-                <ResponsiveContainer width="100%" height="100%">
+              <Box sx={{ height: 320 }}>
+                <ResponsiveContainer>
                   <BarChart data={barData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip
-                      formatter={(v: number) =>
-                        `₹${v.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}`
-                      }
-                    />
+                    <Tooltip />
                     <Legend />
-                    <Bar
-                      dataKey="Invested"
-                      name="Total investment"
-                      fill="#38bdf8"
-                    />
-                    <Bar
-                      dataKey="Interest"
-                      name="Interest earned"
-                      fill="#0f766e"
-                    />
+                    <Bar dataKey="Invested" fill="#38bdf8" />
+                    <Bar dataKey="Interest" fill="#0f766e" />
                   </BarChart>
                 </ResponsiveContainer>
-              </Box>
-
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 2, mb: 1 }}
-              >
-                This table compares your total PPF investment with the interest
-                earned and final maturity value.
-              </Typography>
-              <Box sx={{ overflowX: "auto" }}>
-                <Table
-                  size="small"
-                  aria-label="PPF investment vs maturity vs interest table"
-                >
-                  <TableHead>
-                    <TableRow>
-                      <TableCell align="right">Investment (₹)</TableCell>
-                      <TableCell align="right">Maturity (₹)</TableCell>
-                      <TableCell align="right">Interest (₹)</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {barData.map((row, index) => {
-                      const maturity = row.Invested + row.Interest;
-                      return (
-                        <TableRow key={index}>
-                          <TableCell align="right">
-                            {row.Invested.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </TableCell>
-                          <TableCell align="right">
-                            {maturity.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </TableCell>
-                          <TableCell align="right">
-                            {row.Interest.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
               </Box>
             </Box>
           </Box>

@@ -25,6 +25,10 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- API BASE URL ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type PortfolioFundResult = {
@@ -184,7 +188,7 @@ export default function PortfolioReturnCalculator() {
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:8080/api/mf/portfolio-return", {
+      const res = await fetch(`${API_BASE_URL}/mf/portfolio-return`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ funds: cleanedFunds }),

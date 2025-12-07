@@ -29,6 +29,11 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- API base URL (important) ---------- */
+// Uses env if provided, otherwise falls back to localhost for dev
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- Types matching backend ---------- */
 
 type AmcSchemePerformanceRow = {
@@ -193,16 +198,18 @@ export default function AmcPerformanceCalculator() {
     try {
       setLoading(true);
 
-      // 🔴 IMPORTANT: this matches your backend exactly (amc, period, amount)
+      // matches your backend exactly (amc, period, amount)
       const params = new URLSearchParams({
         amc,
         period,
         amount: amt.toString(),
       });
 
-      const response = await fetch(
-        `http://localhost:8080/api/mf/amc-performance?${params.toString()}`
-      );
+      // 🔹 UPDATED: uses API_BASE_URL instead of hardcoded localhost
+      const url = `${API_BASE_URL}/mf/amc-performance?${params.toString()}`;
+      console.log("AMC performance API URL:", url);
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);

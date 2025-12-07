@@ -27,6 +27,11 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- API base URL (only addition) ---------- */
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type FdPoint = {
@@ -188,7 +193,10 @@ export default function FdCalculator() {
         years: t.toString(),
       });
 
-      const response = await fetch(`http://localhost:8080/api/fd?${params.toString()}`);
+      // 🔴 Only URL changed here
+      const response = await fetch(
+        `${API_BASE_URL}/fd?${params.toString()}`
+      );
 
       if (!response.ok) {
         throw new Error("API error");
@@ -208,7 +216,9 @@ export default function FdCalculator() {
           "en-IN"
         )} in an FD and it may grow to ₹${maturityRounded.toLocaleString(
           "en-IN"
-        )} (interest earned: ₹${interestRounded.toLocaleString("en-IN")}).`
+        )} (interest earned: ₹${interestRounded.toLocaleString(
+          "en-IN"
+        )}).`
       );
 
       const investedWordsRaw = numberToWords(Math.round(invested));
@@ -309,12 +319,18 @@ export default function FdCalculator() {
                 label="FD Amount (₹)"
                 type="text"
                 value={amount}
-                onChange={(e) => setAmount(formatIndianNumber(e.target.value))}
+                onChange={(e) =>
+                  setAmount(formatIndianNumber(e.target.value))
+                }
               />
               {amountWords && (
                 <Typography
                   variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: 600, mt: -0.5 }}
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 600,
+                    mt: -0.5,
+                  }}
                 >
                   {amountWords}
                 </Typography>
@@ -329,7 +345,11 @@ export default function FdCalculator() {
               {rateWords && (
                 <Typography
                   variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: 600, mt: -0.5 }}
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 600,
+                    mt: -0.5,
+                  }}
                 >
                   {rateWords}
                 </Typography>
@@ -344,13 +364,21 @@ export default function FdCalculator() {
               {yearsWords && (
                 <Typography
                   variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: 600, mt: -0.5 }}
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 600,
+                    mt: -0.5,
+                  }}
                 >
                   {yearsWords}
                 </Typography>
               )}
 
-              <Button variant="contained" size="large" onClick={handleCalculate}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleCalculate}
+              >
                 Calculate FD Maturity
               </Button>
             </Stack>
@@ -370,7 +398,8 @@ export default function FdCalculator() {
               <ul style={{ marginTop: 0, paddingLeft: "1.2rem" }}>
                 <li>You deposit a one-time amount in an FD.</li>
                 <li>
-                  Interest is compounded quarterly at the annual rate you enter.
+                  Interest is compounded quarterly at the annual rate you
+                  enter.
                 </li>
                 <li>
                   It shows your maturity amount and total interest earned over

@@ -4,6 +4,10 @@ import {
 } from "@mui/material";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 
+/* ---------- API BASE URL added ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 export default function MfNavHistoryCalculator() {
   const [schemeCode, setSchemeCode] = useState("120503");
   const [from, setFrom] = useState("2023-01-01");
@@ -14,9 +18,11 @@ export default function MfNavHistoryCalculator() {
 
   const fetchHistory = async () => {
     setLoading(true);
+
     const res = await fetch(
-      `http://localhost:8080/api/mf/nav-history?schemeCode=${schemeCode}&from=${from}&to=${to}`
+      `${API_BASE_URL}/mf/nav-history?schemeCode=${schemeCode}&from=${from}&to=${to}`
     );
+
     const json = await res.json();
     setData(json);
     setLoading(false);
@@ -31,11 +37,19 @@ export default function MfNavHistoryCalculator() {
             value={schemeCode}
             onChange={(e) => setSchemeCode(e.target.value)}
           />
-          <TextField type="date" label="From Date" value={from}
+
+          <TextField
+            type="date"
+            label="From Date"
+            value={from}
             onChange={(e) => setFrom(e.target.value)}
             InputLabelProps={{ shrink: true }}
           />
-          <TextField type="date" label="To Date" value={to}
+
+          <TextField
+            type="date"
+            label="To Date"
+            value={to}
             onChange={(e) => setTo(e.target.value)}
             InputLabelProps={{ shrink: true }}
           />
@@ -59,7 +73,12 @@ export default function MfNavHistoryCalculator() {
                 <XAxis dataKey="date" hide />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="nav" stroke="#1976d2" dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="nav"
+                  stroke="#1976d2"
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           </Box>

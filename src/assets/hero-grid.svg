@@ -1,0 +1,67 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+                    gradientTransform="translate(200 100) rotate(45) scale(600 400)">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#0B1120" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+                    gradientTransform="translate(1400 700) rotate(-45) scale(700 500)">
+      <stop offset="0%" stop-color="#22C55E" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#020617" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="#020617"/>
+  <rect width="1600" height="900" fill="url(#glow1)"/>
+  <rect width="1600" height="900" fill="url(#glow2)"/>
+
+  <!-- grid -->
+  <g stroke="#1E293B" stroke-width="0.5" opacity="0.6">
+    <!-- vertical lines -->
+    <line x1="0" y1="0" x2="0" y2="900"/>
+    <line x1="80" y1="0" x2="80" y2="900"/>
+    <line x1="160" y1="0" x2="160" y2="900"/>
+    <line x1="240" y1="0" x2="240" y2="900"/>
+    <line x1="320" y1="0" x2="320" y2="900"/>
+    <line x1="400" y1="0" x2="400" y2="900"/>
+    <line x1="480" y1="0" x2="480" y2="900"/>
+    <line x1="560" y1="0" x2="560" y2="900"/>
+    <line x1="640" y1="0" x2="640" y2="900"/>
+    <line x1="720" y1="0" x2="720" y2="900"/>
+    <line x1="800" y1="0" x2="800" y2="900"/>
+    <line x1="880" y1="0" x2="880" y2="900"/>
+    <line x1="960" y1="0" x2="960" y2="900"/>
+    <line x1="1040" y1="0" x2="1040" y2="900"/>
+    <line x1="1120" y1="0" x2="1120" y2="900"/>
+    <line x1="1200" y1="0" x2="1200" y2="900"/>
+    <line x1="1280" y1="0" x2="1280" y2="900"/>
+    <line x1="1360" y1="0" x2="1360" y2="900"/>
+    <line x1="1440" y1="0" x2="1440" y2="900"/>
+    <line x1="1520" y1="0" x2="1520" y2="900"/>
+
+    <!-- horizontal lines -->
+    <line x1="0" y1="0" x2="1600" y2="0"/>
+    <line x1="0" y1="60" x2="1600" y2="60"/>
+    <line x1="0" y1="120" x2="1600" y2="120"/>
+    <line x1="0" y1="180" x2="1600" y2="180"/>
+    <line x1="0" y1="240" x2="1600" y2="240"/>
+    <line x1="0" y1="300" x2="1600" y2="300"/>
+    <line x1="0" y1="360" x2="1600" y2="360"/>
+    <line x1="0" y1="420" x2="1600" y2="420"/>
+    <line x1="0" y1="480" x2="1600" y2="480"/>
+    <line x1="0" y1="540" x2="1600" y2="540"/>
+    <line x1="0" y1="600" x2="1600" y2="600"/>
+    <line x1="0" y1="660" x2="1600" y2="660"/>
+    <line x1="0" y1="720" x2="1600" y2="720"/>
+    <line x1="0" y1="780" x2="1600" y2="780"/>
+    <line x1="0" y1="840" x2="1600" y2="840"/>
+    <line x1="0" y1="900" x2="1600" y2="900"/>
+  </g>
+
+  <!-- subtle glowing dots -->
+  <circle cx="260" cy="260" r="3" fill="#38BDF8"/>
+  <circle cx="560" cy="420" r="3" fill="#A855F7"/>
+  <circle cx="980" cy="320" r="3" fill="#22C55E"/>
+  <circle cx="1320" cy="580" r="3" fill="#FACC15"/>
+</svg>

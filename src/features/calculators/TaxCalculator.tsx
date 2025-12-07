@@ -28,6 +28,11 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- API BASE URL ---------- */
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type BarPoint = {
@@ -44,7 +49,7 @@ type TaxApiResponse = {
   regime: string;
 };
 
-/* ---------- helpers (same style as other calculators) ---------- */
+/* ---------- helpers ---------- */
 
 const formatIndianNumber = (value: string) => {
   if (!value) return "";
@@ -167,7 +172,7 @@ export default function TaxCalculator() {
         regime,
       });
 
-      const url = `http://localhost:8080/api/tax?${params.toString()}`;
+      const url = `${API_BASE_URL}/tax?${params.toString()}`;
       console.log("Tax API URL:", url);
 
       const response = await fetch(url);
@@ -179,7 +184,7 @@ export default function TaxCalculator() {
       const data: TaxApiResponse = await response.json();
 
       const totalTax = data.tax;
-      const effRate = data.effectiveRate; // already in percent
+      const effRate = data.effectiveRate;
       const netIncome = data.netIncome;
 
       setSummary(
@@ -285,9 +290,7 @@ export default function TaxCalculator() {
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                This is a simplified income tax calculator. It takes your taxable
-                income, applies slab logic on the backend and returns total tax,
-                net income and effective tax rate for the chosen regime.
+                This calculator takes your taxable income and applies backend slab rules to compute total tax, net income, and effective tax rate.
               </Typography>
 
               <Divider sx={{ my: 1.5 }} />

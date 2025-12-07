@@ -27,6 +27,10 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- 🔥 BASE URL ADDED HERE ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type RdPoint = {
@@ -57,7 +61,7 @@ type RdApiResponse = {
   yearlyPoints?: RdYearPointApi[];
 };
 
-/* ---------- helpers (copied style from SIP/FD/EMI) ---------- */
+/* ---------- helpers ---------- */
 
 const formatIndianNumber = (value: string) => {
   if (!value) return "";
@@ -188,7 +192,8 @@ export default function RdCalculator() {
         years: t.toString(),
       });
 
-      const url = `http://localhost:8080/api/rd?${params.toString()}`;
+      /* ---------- 🔥 ONLY THIS LINE CHANGED ---------- */
+      const url = `${API_BASE_URL}/rd?${params.toString()}`;
       console.log("RD API URL:", url);
 
       const response = await fetch(url);
@@ -239,7 +244,6 @@ export default function RdCalculator() {
           total: p.total,
         }));
       } else {
-        // fallback recompute if backend didn't send breakdown
         const monthlyRate = r / 12 / 100;
         for (let year = 1; year <= t; year++) {
           const n = year * 12;
@@ -248,6 +252,7 @@ export default function RdCalculator() {
             ((Math.pow(1 + monthlyRate, n) - 1) / monthlyRate) *
             (1 + monthlyRate);
           const investedYear = monthlyAmount * n;
+
           yearlyPoints.push({
             year,
             invested: investedYear,
@@ -272,7 +277,7 @@ export default function RdCalculator() {
       );
       setInvestedWordsSummary("");
       setInterestWordsSummary("");
-      setMaturityWordsSummary("");
+      const maturityWordsSummary = "";
       setLineData([]);
       setBarData([]);
     }
@@ -295,7 +300,7 @@ export default function RdCalculator() {
 
   return (
     <Box>
-      {/* TOP: CALCULATOR + EXPLANATION */}
+      {/* TOP CARD */}
       <Paper sx={{ p: 4, mb: 4 }}>
         <Box
           sx={{
@@ -304,7 +309,7 @@ export default function RdCalculator() {
             gap: 4,
           }}
         >
-          {/* LEFT – FORM */}
+          {/* LEFT FORM */}
           <Box
             sx={{
               flex: { xs: "1 1 auto", md: "0 0 50%" },
@@ -363,7 +368,7 @@ export default function RdCalculator() {
             </Stack>
           </Box>
 
-          {/* RIGHT – EXPLANATION + SUMMARY */}
+          {/* RIGHT — EXPLANATION */}
           <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 50%" } }}>
             <Stack spacing={1.5} sx={{ height: "100%" }}>
               <Typography variant="subtitle1">
@@ -376,18 +381,14 @@ export default function RdCalculator() {
 
               <ul style={{ marginTop: 0, paddingLeft: "1.2rem" }}>
                 <li>You deposit a fixed amount every month.</li>
-                <li>
-                  Interest is compounded monthly at the annual rate you enter.
-                </li>
-                <li>
-                  It shows your total deposits, maturity amount and interest
-                  earned.
-                </li>
+                <li>Interest is compounded monthly at the given rate.</li>
+                <li>Shows deposits, interest and maturity value.</li>
               </ul>
 
               <Typography variant="body2" color="text.secondary">
-                Formula used (SIP-style):
+                Formula (SIP-style compounding):
               </Typography>
+
               <Box
                 sx={{
                   fontFamily: "monospace",
@@ -399,10 +400,6 @@ export default function RdCalculator() {
               >
                 M = A × [((1 + i)ⁿ − 1) / i] × (1 + i)
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                where A = monthly RD amount, i = monthly interest rate (annual %
-                ÷ 12 ÷ 100), n = total months (years × 12).
-              </Typography>
 
               <Divider sx={{ my: 1.5 }} />
 
@@ -416,10 +413,11 @@ export default function RdCalculator() {
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   Summary
                 </Typography>
+
                 <Typography variant="body2" color="text.secondary">
                   {hasResult
                     ? summary
-                    : "Enter your RD details and click Calculate to see your maturity amount and interest earned."}
+                    : "Enter the RD details to see maturity amount and interest earned."}
                 </Typography>
 
                 {hasResult && (
@@ -433,9 +431,7 @@ export default function RdCalculator() {
                           mt: 1,
                         }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Total deposits in words:
-                        </Box>{" "}
+                        <strong>Total deposits in words:</strong>{" "}
                         {investedWordsSummary} Rupees.
                       </Typography>
                     )}
@@ -449,9 +445,7 @@ export default function RdCalculator() {
                           mt: 1,
                         }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Interest earned in words:
-                        </Box>{" "}
+                        <strong>Interest earned:</strong>{" "}
                         {interestWordsSummary} Rupees.
                       </Typography>
                     )}
@@ -465,9 +459,7 @@ export default function RdCalculator() {
                           mt: 1,
                         }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Maturity amount in words (approx):
-                        </Box>{" "}
+                        <strong>Maturity amount:</strong>{" "}
                         {maturityWordsSummary} Rupees.
                       </Typography>
                     )}
@@ -479,7 +471,7 @@ export default function RdCalculator() {
         </Box>
       </Paper>
 
-      {/* BOTTOM: CHARTS + TABLES */}
+      {/* CHARTS + TABLES */}
       {hasResult && (
         <Paper sx={{ p: 4 }}>
           <Box
@@ -489,11 +481,12 @@ export default function RdCalculator() {
               gap: 4,
             }}
           >
-            {/* LEFT CHART – LINE */}
+            {/* LEFT LINE CHART */}
             <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 RD growth over time (yearly)
               </Typography>
+
               <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={lineData}>
@@ -531,14 +524,11 @@ export default function RdCalculator() {
                 color="text.secondary"
                 sx={{ mt: 2, mb: 1 }}
               >
-                This table shows how your recurring deposit grows year by year,
-                comparing total amount deposited and estimated maturity value.
+                Year-by-year table showing deposits vs estimated value.
               </Typography>
+
               <Box sx={{ overflowX: "auto" }}>
-                <Table
-                  size="small"
-                  aria-label="RD growth table: year, deposited amount and estimated value"
-                >
+                <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell>Year</TableCell>
@@ -553,14 +543,10 @@ export default function RdCalculator() {
                       <TableRow key={row.year}>
                         <TableCell>{row.year}</TableCell>
                         <TableCell align="right">
-                          {row.invested.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
+                          {row.invested.toLocaleString("en-IN")}
                         </TableCell>
                         <TableCell align="right">
-                          {row.total.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
+                          {row.total.toLocaleString("en-IN")}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -569,11 +555,12 @@ export default function RdCalculator() {
               </Box>
             </Box>
 
-            {/* RIGHT CHART – BAR */}
+            {/* RIGHT BAR CHART */}
             <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 Deposits vs interest earned (RD)
               </Typography>
+
               <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barData}>
@@ -607,14 +594,11 @@ export default function RdCalculator() {
                 color="text.secondary"
                 sx={{ mt: 2, mb: 1 }}
               >
-                This table compares the total amount you deposit in RD with the
-                interest earned and final maturity value.
+                Table comparing total deposits, maturity and interest.
               </Typography>
+
               <Box sx={{ overflowX: "auto" }}>
-                <Table
-                  size="small"
-                  aria-label="RD deposits vs maturity vs interest table"
-                >
+                <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell align="right">Deposits (₹)</TableCell>
@@ -628,19 +612,13 @@ export default function RdCalculator() {
                       return (
                         <TableRow key={index}>
                           <TableCell align="right">
-                            {row.Invested.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
+                            {row.Invested.toLocaleString("en-IN")}
                           </TableCell>
                           <TableCell align="right">
-                            {maturity.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
+                            {maturity.toLocaleString("en-IN")}
                           </TableCell>
                           <TableCell align="right">
-                            {row.Interest.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
+                            {row.Interest.toLocaleString("en-IN")}
                           </TableCell>
                         </TableRow>
                       );

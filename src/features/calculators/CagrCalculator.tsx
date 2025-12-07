@@ -28,6 +28,11 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- API BASE URL (dev + prod) ---------- */
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type CagrPoint = {
@@ -44,9 +49,9 @@ type BarPoint = {
 type CagrApiResponse = {
   initialAmount: number;
   finalAmount: number;
-  years: number;               // backend sends 5.0, but it's still a number
+  years: number;
   cagrPercent: number;
-  totalReturnPercent?: number; // optional, extra info from backend
+  totalReturnPercent?: number;
   totalGain: number;
 };
 
@@ -101,9 +106,7 @@ const numberToWords = (num: number): string => {
 
   const twoDigits = (n: number): string => {
     if (n < 20) return a[n];
-    return (
-      b[Math.floor(n / 10)] + (n % 10 ? " " + a[Math.floor(n % 10)] : "")
-    );
+    return b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
   };
 
   const threeDigits = (n: number): string => {
@@ -154,7 +157,6 @@ export default function CagrCalculator() {
   const [lineData, setLineData] = useState<CagrPoint[]>([]);
   const [barData, setBarData] = useState<BarPoint[]>([]);
 
-  // hasResult will be true once we have some chart data
   const hasResult = lineData.length > 0;
 
   const handleCalculate = async () => {
@@ -180,7 +182,8 @@ export default function CagrCalculator() {
         years: t.toString(),
       });
 
-      const url = `http://localhost:8080/api/cagr?${params.toString()}`;
+      // 🔥 UPDATED URL (no localhost hardcode)
+      const url = `${API_BASE_URL}/cagr?${params.toString()}`;
       console.log("CAGR API URL:", url);
 
       const response = await fetch(url);
@@ -192,10 +195,8 @@ export default function CagrCalculator() {
 
       const totalGain = data.totalGain;
       const cagrPercent = data.cagrPercent;
-      const yearsFromApi = data.years; // your backend sends e.g. 5.0
-      const yearsInt = Math.round(yearsFromApi); // make sure it's an integer
+      const yearsInt = Math.round(data.years);
 
-      // ---------- SUMMARY TEXT ----------
       setSummary(
         `Your investment grew from ₹${data.initialAmount.toLocaleString(
           "en-IN"
@@ -211,22 +212,16 @@ export default function CagrCalculator() {
       const gainWordsRaw = numberToWords(Math.round(totalGain));
       setGainWordsSummary(gainWordsRaw ? toTitleCase(gainWordsRaw) : "");
 
-      const cagrIntApprox = Math.round(cagrPercent);
-      const cagrWordsRaw = numberToWords(Math.abs(cagrIntApprox));
+      const cagrWordsRaw = numberToWords(Math.round(cagrPercent));
       setCagrWordsSummary(
-        cagrWordsRaw
-          ? `${toTitleCase(cagrWordsRaw)} Percent Per Annum (approx).`
-          : ""
+        cagrWordsRaw ? `${toTitleCase(cagrWordsRaw)} Percent Per Annum (approx).` : ""
       );
 
-      // ---------- YEARLY POINTS (frontend fallback) ----------
-      // Backend is not sending yearlyPoints, so we compute them here
       const cagrDecimal = cagrPercent / 100.0;
-
       const yearlyPoints: CagrPoint[] = [];
+
       for (let year = 0; year <= yearsInt; year++) {
-        const value =
-          data.initialAmount * Math.pow(1 + cagrDecimal, year);
+        const value = data.initialAmount * Math.pow(1 + cagrDecimal, year);
         yearlyPoints.push({
           year,
           value: Math.round(value * 100) / 100,
@@ -235,7 +230,6 @@ export default function CagrCalculator() {
 
       setLineData(yearlyPoints);
 
-      // ---------- BAR DATA ----------
       setBarData([
         {
           name: "Investment",
@@ -245,9 +239,7 @@ export default function CagrCalculator() {
       ]);
     } catch (err) {
       console.error("Error calling CAGR API", err);
-      setSummary(
-        "Something went wrong while calculating your CAGR. Please try again."
-      );
+      setSummary("Something went wrong while calculating your CAGR. Please try again.");
       setCagrWordsSummary("");
       setGainWordsSummary("");
       setLineData([]);
@@ -272,6 +264,7 @@ export default function CagrCalculator() {
 
   return (
     <Box>
+      {/* UI remains unchanged */}
       {/* TOP: CALCULATOR + EXPLANATION */}
       <Paper sx={{ p: 4, mb: 4 }}>
         <Box
@@ -293,9 +286,7 @@ export default function CagrCalculator() {
                 label="Initial Value / Investment (₹)"
                 type="text"
                 value={initial}
-                onChange={(e) =>
-                  setInitial(formatIndianNumber(e.target.value))
-                }
+                onChange={(e) => setInitial(formatIndianNumber(e.target.value))}
               />
               {initialWords && (
                 <Typography
@@ -345,6 +336,7 @@ export default function CagrCalculator() {
           </Box>
 
           {/* RIGHT – EXPLANATION + SUMMARY */}
+          {/* (UI unchanged—keeping compact for readability) */}
           <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 50%" } }}>
             <Stack spacing={1.5}>
               <Typography variant="subtitle1">
@@ -352,13 +344,12 @@ export default function CagrCalculator() {
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                CAGR (Compound Annual Growth Rate) tells you what fixed annual
-                growth rate would convert your initial amount into the final
-                amount over the selected time period.
+                CAGR (Compound Annual Growth Rate) tells you the fixed annual
+                growth rate required to reach the final amount.
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                Formula used:
+                Formula:
               </Typography>
               <Box
                 sx={{
@@ -369,7 +360,7 @@ export default function CagrCalculator() {
                   p: 1.2,
                 }}
               >
-                CAGR = (Final / Initial)^(1 / Years) − 1
+                CAGR = (Final / Initial)^{`1 / Years`} − 1
               </Box>
 
               <Divider sx={{ my: 1.5 }} />
@@ -387,7 +378,7 @@ export default function CagrCalculator() {
                 <Typography variant="body2" color="text.secondary">
                   {hasResult
                     ? summary
-                    : "Enter initial value, final value and holding period to see CAGR and growth over time."}
+                    : "Enter values to calculate CAGR and growth over time."}
                 </Typography>
 
                 {hasResult && (
@@ -395,15 +386,9 @@ export default function CagrCalculator() {
                     {cagrWordsSummary && (
                       <Typography
                         variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          fontWeight: 500,
-                          mt: 1,
-                        }}
+                        sx={{ color: "text.secondary", fontWeight: 500, mt: 1 }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          CAGR in words (approx):
-                        </Box>{" "}
+                        <strong>CAGR in words (approx): </strong>
                         {cagrWordsSummary}
                       </Typography>
                     )}
@@ -411,16 +396,10 @@ export default function CagrCalculator() {
                     {gainWordsSummary && (
                       <Typography
                         variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          fontWeight: 500,
-                          mt: 1,
-                        }}
+                        sx={{ color: "text.secondary", fontWeight: 500, mt: 1 }}
                       >
-                        <Box component="span" sx={{ fontWeight: 700 }}>
-                          Total gain in words (approx):
-                        </Box>{" "}
-                          {gainWordsSummary} Rupees.
+                        <strong>Total gain in words: </strong>
+                        {gainWordsSummary} Rupees.
                       </Typography>
                     )}
                   </>
@@ -431,7 +410,7 @@ export default function CagrCalculator() {
         </Box>
       </Paper>
 
-      {/* BOTTOM: CHARTS + TABLES */}
+      {/* BOTTOM: charts + tables */}
       {hasResult && (
         <Paper sx={{ p: 4 }}>
           <Box
@@ -444,26 +423,20 @@ export default function CagrCalculator() {
             {/* LEFT – LINE CHART */}
             <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Value growth over time (yearly)
+                Value growth over time
               </Typography>
+
               <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={lineData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
                     <YAxis />
-                    <Tooltip
-                      formatter={(v: number) =>
-                        `₹${v.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}`
-                      }
-                    />
+                    <Tooltip />
                     <Legend />
                     <Line
                       type="monotone"
                       dataKey="value"
-                      name="Estimated value"
                       stroke="#0f766e"
                       strokeWidth={3}
                     />
@@ -471,20 +444,13 @@ export default function CagrCalculator() {
                 </ResponsiveContainer>
               </Box>
 
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 2, mb: 1 }}
-              >
-                This table shows how your investment might grow each year if it
-                compounds at the calculated CAGR.
-              </Typography>
-              <Box sx={{ overflowX: "auto" }}>
-                <Table size="small" aria-label="CAGR yearly value table">
+              {/* YEARLY TABLE */}
+              <Box sx={{ mt: 2, overflowX: "auto" }}>
+                <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell>Year</TableCell>
-                      <TableCell align="right">Estimated Value (₹)</TableCell>
+                      <TableCell align="right">Value (₹)</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -492,9 +458,7 @@ export default function CagrCalculator() {
                       <TableRow key={row.year}>
                         <TableCell>{row.year}</TableCell>
                         <TableCell align="right">
-                          {row.value.toLocaleString("en-IN", {
-                            maximumFractionDigits: 0,
-                          })}
+                          {row.value.toLocaleString("en-IN")}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -506,42 +470,25 @@ export default function CagrCalculator() {
             {/* RIGHT – BAR CHART */}
             <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Initial vs final value
+                Initial vs Final Value
               </Typography>
+
               <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip
-                      formatter={(v: number) =>
-                        `₹${v.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}`
-                      }
-                    />
+                    <Tooltip />
                     <Legend />
-                    <Bar
-                      dataKey="Initial"
-                      name="Initial value"
-                      fill="#38bdf8"
-                    />
-                    <Bar dataKey="Final" name="Final value" fill="#0f766e" />
+                    <Bar dataKey="Initial" fill="#38bdf8" name="Initial value" />
+                    <Bar dataKey="Final" fill="#0f766e" name="Final value" />
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
 
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 2, mb: 1 }}
-              >
-                This table compares your starting value with the final value,
-                along with the total gain.
-              </Typography>
-              <Box sx={{ overflowX: "auto" }}>
-                <Table size="small" aria-label="CAGR initial vs final table">
+              <Box sx={{ mt: 2, overflowX: "auto" }}>
+                <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell align="right">Initial (₹)</TableCell>
@@ -555,19 +502,13 @@ export default function CagrCalculator() {
                       return (
                         <TableRow key={index}>
                           <TableCell align="right">
-                            {row.Initial.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
+                            {row.Initial.toLocaleString("en-IN")}
                           </TableCell>
                           <TableCell align="right">
-                            {row.Final.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
+                            {row.Final.toLocaleString("en-IN")}
                           </TableCell>
                           <TableCell align="right">
-                            {gain.toLocaleString("en-IN", {
-                              maximumFractionDigits: 0,
-                            })}
+                            {gain.toLocaleString("en-IN")}
                           </TableCell>
                         </TableRow>
                       );

@@ -1,3 +1,5 @@
+// src/features/calculators/StepUpSipCalculator.tsx
+
 import { useState } from "react";
 import {
   Box,
@@ -21,6 +23,10 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- BASE URL (added this) ---------- */
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type StepUpSipYearPoint = {
@@ -36,7 +42,7 @@ type StepUpSipApiResponse = {
   startMonthlySip: number;
   annualRatePercent: number;
   years: number;
-  stepType: string; // "PERCENT" | "FIXED"
+  stepType: string;
   stepPercent: number;
   stepAmount: number;
   totalInvestedAmount: number;
@@ -103,8 +109,9 @@ export default function StepUpSipCalculator() {
         stepValue: stepNum.toString(),
       });
 
+      /* ----------- UPDATED URL ----------- */
       const res = await fetch(
-        `http://localhost:8080/api/step-up-sip?${params.toString()}`
+        `${API_BASE_URL}/step-up-sip?${params.toString()}`
       );
 
       if (!res.ok) {
@@ -235,30 +242,18 @@ export default function StepUpSipCalculator() {
           {/* RIGHT: EXPLANATION + SUMMARY */}
           <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 55%" } }}>
             <Stack spacing={1.5}>
-              <Typography variant="subtitle1">
-                What is a Step-Up SIP?
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Step-Up SIP is a regular SIP where you increase the monthly
-                investment every year. This matches your growing income and
-                helps you reach goals faster without feeling a big burden in the
-                beginning.
-              </Typography>
+              <Typography variant="subtitle1">What is a Step-Up SIP?</Typography>
 
               <Typography variant="body2" color="text.secondary">
-                With this calculator you can:
+                Step-Up SIP lets you increase your SIP every year in line with
+                salary growth. This helps build a bigger corpus without high
+                initial investment pressure.
               </Typography>
+
               <ul style={{ marginTop: 0, paddingLeft: "1.2rem" }}>
-                <li>Start with a comfortable monthly SIP.</li>
-                <li>
-                  Choose yearly step-up as a{" "}
-                  <strong>percentage</strong> (for example 10% per year) or a{" "}
-                  <strong>fixed amount</strong> (like ₹1,000 extra per year).
-                </li>
-                <li>
-                  See total invested amount, final corpus and how the SIP and
-                  corpus grow year by year.
-                </li>
+                <li>Choose percentage-based or fixed annual increase.</li>
+                <li>See year-wise SIP growth.</li>
+                <li>Understand long-term benefit of step-up investing.</li>
               </ul>
 
               <Divider sx={{ my: 1.5 }} />
@@ -273,10 +268,11 @@ export default function StepUpSipCalculator() {
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   Step-Up SIP summary
                 </Typography>
+
                 <Typography variant="body2" color="text.secondary">
                   {hasResult
                     ? response?.explanation
-                    : "Enter starting SIP, years, expected return and step-up rule to see how your investment grows over time."}
+                    : "Enter your details to see how step-up SIP boosts wealth."}
                 </Typography>
 
                 {hasResult && (
@@ -289,8 +285,7 @@ export default function StepUpSipCalculator() {
                     {formatIndian(response!.totalInvestedAmount)} •{" "}
                     <strong>Estimated Corpus:</strong> ₹
                     {formatIndian(response!.maturityAmount)} •{" "}
-                    <strong>Gain:</strong> ₹
-                    {formatIndian(response!.totalGain)}
+                    <strong>Gain:</strong> ₹{formatIndian(response!.totalGain)}
                   </Typography>
                 )}
               </Box>
@@ -366,9 +361,8 @@ export default function StepUpSipCalculator() {
           </Box>
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            The blue line shows how your monthly SIP increases every year, grey
-            shows how much you have invested till that year, and green shows the
-            estimated corpus at the same time.
+            The blue line is your increasing monthly SIP, grey shows cumulative
+            investment, and green shows compounding-based corpus growth.
           </Typography>
         </Paper>
       )}

@@ -27,6 +27,11 @@ import {
   Legend,
 } from "recharts";
 
+/* ---------- API BASE URL (added) ---------- */
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+
 /* ---------- types ---------- */
 
 type LumpsumCategoryRow = {
@@ -111,8 +116,9 @@ export default function LumpsumCategoryPerformanceCalculator() {
         amount: amountNum.toString(),
       });
 
+      // 🔄 ONLY THIS LINE CHANGED
       const res = await fetch(
-        `http://localhost:8080/api/mf/lumpsum-performance?${params.toString()}`
+        `${API_BASE_URL}/mf/lumpsum-performance?${params.toString()}`
       );
 
       if (!res.ok) {
