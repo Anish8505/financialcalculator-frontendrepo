@@ -1,14 +1,11 @@
 // src/pages/HomePage.tsx
-import {
-  Box,
-  Button,
-  Container,
-  Grid,
-  Paper,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Container, Paper, Typography } from "@mui/material";
+import MuiGrid from "@mui/material/Grid";
 import { Link as RouterLink } from "react-router-dom";
 import heroImage from "../assets/financialglacier-hero.png";
+
+// Bypass over-strict TS types for Grid in this file only
+const Grid: any = MuiGrid;
 
 export default function HomePage() {
   return (
@@ -156,10 +153,10 @@ export default function HomePage() {
               variant="body2"
               sx={{ color: "text.secondary", mb: 2, maxWidth: 720 }}
             >
-              Compare mutual fund schemes AMC-wise and see how a single
-              lumpsum investment would have performed across different funds.
-              Use this to shortlist consistent performers before starting your
-              SIP or lumpsum investment.
+              Compare mutual fund schemes AMC-wise and see how a single lumpsum
+              investment would have performed across different funds. Use this
+              to shortlist consistent performers before starting your SIP or
+              lumpsum investment.
             </Typography>
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>

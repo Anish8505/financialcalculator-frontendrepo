@@ -277,7 +277,6 @@ export default function RdCalculator() {
       );
       setInvestedWordsSummary("");
       setInterestWordsSummary("");
-      const maturityWordsSummary = "";
       setLineData([]);
       setBarData([]);
     }

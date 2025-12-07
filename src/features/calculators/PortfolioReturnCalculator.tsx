@@ -1,3 +1,4 @@
+// src/features/calculators/PortfolioReturnCalculator.tsx
 import { useState } from "react";
 import {
   Box,
@@ -77,7 +78,14 @@ type PortfolioRowInput = {
 const formatIndian = (num: number) =>
   num.toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
-const COLORS = ["#0f766e", "#38bdf8", "#f97316", "#6366f1", "#e11d48", "#22c55e"];
+const COLORS = [
+  "#0f766e",
+  "#38bdf8",
+  "#f97316",
+  "#6366f1",
+  "#e11d48",
+  "#22c55e",
+];
 
 /* ---------- component ---------- */
 
@@ -109,6 +117,13 @@ export default function PortfolioReturnCalculator() {
 
   const hasResult = !!response;
 
+  const formatAmountInput = (value: string) => {
+    const raw = value.replace(/,/g, "");
+    if (!raw) return "";
+    if (!/^\d+$/.test(raw)) return value;
+    return Number(raw).toLocaleString("en-IN");
+  };
+
   const handleRowChange = (
     index: number,
     field: keyof PortfolioRowInput,
@@ -127,13 +142,6 @@ export default function PortfolioReturnCalculator() {
           : row
       )
     );
-  };
-
-  const formatAmountInput = (value: string) => {
-    const raw = value.replace(/,/g, "");
-    if (!raw) return "";
-    if (!/^\d+$/.test(raw)) return value;
-    return Number(raw).toLocaleString("en-IN");
   };
 
   const addRow = () => {
@@ -474,7 +482,7 @@ export default function PortfolioReturnCalculator() {
                       dataKey="weightPercent"
                       nameKey="schemeName"
                       outerRadius={90}
-                      label={(entry) =>
+                      label={(entry: any) =>
                         `${entry.schemeName} (${entry.weightPercent.toFixed(
                           1
                         )}%)`
