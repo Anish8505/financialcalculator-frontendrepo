@@ -41,12 +41,24 @@ type BarPoint = {
   Tax: number;
 };
 
+type TaxSlab = {
+  slabLabel: string;
+  ratePercent: number;
+  taxableAmount: number;
+  taxAmount: number;
+};
+
 type TaxApiResponse = {
-  income: number;
-  tax: number;
-  netIncome: number;
-  effectiveRate: number; // percentage, e.g. 2.86
+  calculator: string;
+  currency: string;
+  financialYear: string;
   regime: string;
+  taxableIncome: number;
+  totalTax: number;
+  cessAmount: number;
+  totalTaxWithCess: number;
+  effectiveTaxRatePercent: number;
+  slabs: TaxSlab[];
 };
 
 /* ---------- helpers ---------- */
@@ -151,7 +163,7 @@ export default function TaxCalculator() {
 
   const [barData, setBarData] = useState<BarPoint[]>([]);
 
-  const hasResult = barData.length > 0;
+  const hasResult = !!summary && barData.length > 0;
 
   const handleCalculate = async () => {
     const incomeNumeric = Number(income.replace(/,/g, ""));
@@ -183,31 +195,34 @@ export default function TaxCalculator() {
 
       const data: TaxApiResponse = await response.json();
 
-      const totalTax = data.tax;
-      const effRate = data.effectiveRate;
-      const netIncome = data.netIncome;
+      // Map backend fields -> frontend
+      const taxableIncome = data.taxableIncome;
+      const totalTaxWithCess = data.totalTaxWithCess;
+      const effRate = data.effectiveTaxRatePercent;
+      const netIncome = taxableIncome - totalTaxWithCess;
 
       setSummary(
-        `For a taxable income of ₹${data.income.toLocaleString(
+        `For a taxable income of ₹${taxableIncome.toLocaleString(
           "en-IN"
-        )}, your approximate income tax is ₹${totalTax.toLocaleString(
+        )}, your approximate income tax including cess is ₹${totalTaxWithCess.toLocaleString(
           "en-IN"
         )}. Your net income after tax is ₹${netIncome.toLocaleString(
           "en-IN"
         )} (effective tax rate ≈ ${effRate.toFixed(2)}%).`
       );
 
-      const incomeWordsRaw = numberToWords(Math.round(data.income));
-      const taxWordsRaw = numberToWords(Math.round(totalTax));
+      const incomeWordsRaw = numberToWords(Math.round(taxableIncome));
+      const taxWordsRaw = numberToWords(Math.round(totalTaxWithCess));
 
       setIncomeWords(incomeWordsRaw ? toTitleCase(incomeWordsRaw) : "");
       setTaxWords(taxWordsRaw ? toTitleCase(taxWordsRaw) : "");
 
+      // Single bar: total taxable vs total tax (with cess)
       setBarData([
         {
           name: "Income vs Tax",
-          Taxable: data.income,
-          Tax: totalTax,
+          Taxable: taxableIncome,
+          Tax: totalTaxWithCess,
         },
       ]);
     } catch (err) {
@@ -290,7 +305,9 @@ export default function TaxCalculator() {
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                This calculator takes your taxable income and applies backend slab rules to compute total tax, net income, and effective tax rate.
+                This calculator takes your taxable income and applies backend
+                slab rules to compute total tax, cess, net income, and effective
+                tax rate.
               </Typography>
 
               <Divider sx={{ my: 1.5 }} />
@@ -325,7 +342,7 @@ export default function TaxCalculator() {
                         <Box component="span" sx={{ fontWeight: 700 }}>
                           Income in words:
                         </Box>{" "}
-                        {incomeWords} Rupees.
+                          {incomeWords} Rupees.
                       </Typography>
                     )}
 
@@ -339,9 +356,9 @@ export default function TaxCalculator() {
                         }}
                       >
                         <Box component="span" sx={{ fontWeight: 700 }}>
-                          Tax in words (approx):
+                          Tax in words (approx, including cess):
                         </Box>{" "}
-                        {taxWords} Rupees.
+                          {taxWords} Rupees.
                       </Typography>
                     )}
                   </>
@@ -365,7 +382,7 @@ export default function TaxCalculator() {
             {/* LEFT – BAR CHART */}
             <Box sx={{ flex: "1 1 0", minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Taxable income vs tax
+                Taxable income vs tax (including cess)
               </Typography>
               <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -386,7 +403,11 @@ export default function TaxCalculator() {
                       name="Taxable income"
                       fill="#38bdf8"
                     />
-                    <Bar dataKey="Tax" name="Tax" fill="#0f766e" />
+                    <Bar
+                      dataKey="Tax"
+                      name="Tax (incl. cess)"
+                      fill="#0f766e"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
@@ -402,7 +423,7 @@ export default function TaxCalculator() {
                   <TableHead>
                     <TableRow>
                       <TableCell align="right">Taxable Income (₹)</TableCell>
-                      <TableCell align="right">Tax (₹)</TableCell>
+                      <TableCell align="right">Tax incl. cess (₹)</TableCell>
                       <TableCell align="right">Net Income (₹)</TableCell>
                       <TableCell align="right">Effective Rate (%)</TableCell>
                     </TableRow>

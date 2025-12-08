@@ -1,3 +1,4 @@
+// src/features/calculators/PpfCalculator.tsx
 import { useState } from "react";
 import {
   Box,
@@ -45,12 +46,22 @@ type BarPoint = {
   Interest: number;
 };
 
+type PpfYearPointApi = {
+  year: number;
+  invested: number;
+  total: number;
+};
+
 type PpfApiResponse = {
-  yearlyInvestment: number;
-  tenureYears: number;
+  calculator: string;
+  currency: string;
+  yearlyContribution: number;
+  annualRatePercent: number;
+  years: number;
+  investedAmount: number;
   maturityAmount: number;
-  totalInvestment: number;
-  totalInterest: number;
+  interestEarned: number;
+  yearlyPoints: PpfYearPointApi[];
 };
 
 /* ---------- helpers ---------- */
@@ -156,7 +167,7 @@ export default function PpfCalculator() {
   const [lineData, setLineData] = useState<PpfPoint[]>([]);
   const [barData, setBarData] = useState<BarPoint[]>([]);
 
-  const hasResult = lineData.length > 0;
+  const hasResult = lineData.length > 0 && barData.length > 0;
 
   const handleCalculate = async () => {
     const yearlyAmount = Number(yearly.replace(/,/g, ""));
@@ -190,16 +201,18 @@ export default function PpfCalculator() {
 
       const data: PpfApiResponse = await response.json();
 
-      const invested = data.totalInvestment;
+      // Map backend -> frontend
+      const yearlyContribution = data.yearlyContribution;
+      const tenureYears = data.years;
+      const invested = data.investedAmount;
       const maturity = data.maturityAmount;
-      const interest = data.totalInterest;
-      const tenureYears = data.tenureYears;
+      const interest = data.interestEarned;
 
       const maturityRounded = Math.round(maturity);
       const interestRounded = Math.round(interest);
 
       setSummary(
-        `You invest ₹${yearlyAmount.toLocaleString(
+        `You invest ₹${yearlyContribution.toLocaleString(
           "en-IN"
         )} every year in PPF for ${tenureYears} years (total investment: ₹${invested.toLocaleString(
           "en-IN"
@@ -214,22 +227,14 @@ export default function PpfCalculator() {
       setInterestWordsSummary(toTitleCase(numberToWords(interestRounded)));
       setMaturityWordsSummary(toTitleCase(numberToWords(maturityRounded)));
 
-      // Fallback calculation for chart
-      const yearlyPoints: PpfPoint[] = [];
-      const rateDec = r / 100;
-      const nYears = tenureYears || t;
+      let yearlyPoints: PpfPoint[] = [];
 
-      for (let year = 1; year <= nYears; year++) {
-        const totalYear =
-          yearlyAmount *
-          ((Math.pow(1 + rateDec, year) - 1) / rateDec) *
-          (1 + rateDec);
-
-        yearlyPoints.push({
-          year,
-          invested: yearlyAmount * year,
-          total: totalYear,
-        });
+      if (Array.isArray(data.yearlyPoints) && data.yearlyPoints.length > 0) {
+        yearlyPoints = data.yearlyPoints.map((p) => ({
+          year: p.year,
+          invested: p.invested,
+          total: p.total,
+        }));
       }
 
       setLineData(yearlyPoints);
@@ -271,7 +276,7 @@ export default function PpfCalculator() {
 
   return (
     <Box>
-      {/* TOP CARD */}
+      {/* TOP CARD – FORM + EXPLANATION + SUMMARY */}
       <Paper sx={{ p: 4, mb: 4 }}>
         <Box
           sx={{
@@ -280,7 +285,7 @@ export default function PpfCalculator() {
             gap: 4,
           }}
         >
-          {/* LEFT FORM */}
+          {/* LEFT: FORM */}
           <Box
             sx={{
               flex: { xs: "1 1 auto", md: "0 0 50%" },
@@ -327,7 +332,7 @@ export default function PpfCalculator() {
             </Stack>
           </Box>
 
-          {/* RIGHT SUMMARY */}
+          {/* RIGHT: HOW IT WORKS + SUMMARY + FORMULA */}
           <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 50%" } }}>
             <Stack spacing={1.5}>
               <Typography variant="subtitle1">
@@ -335,11 +340,41 @@ export default function PpfCalculator() {
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                This calculator shows total investment, interest earned, and final
-                maturity value based on yearly contributions and compound interest.
+                This PPF calculator assumes you invest a fixed amount every year
+                and earn a constant interest rate compounded annually. It
+                estimates:
               </Typography>
 
-              <Divider />
+              <ul style={{ marginTop: 0, paddingLeft: "1.2rem" }}>
+                <li>Total amount invested over the tenure</li>
+                <li>Total interest earned on your contributions</li>
+                <li>Final maturity amount at the end of the PPF term</li>
+              </ul>
+
+              <Typography variant="body2" color="text.secondary">
+                For yearly investments, the future value (FV) is computed using a
+                formula similar to a SIP with yearly frequency:
+              </Typography>
+
+              <Box
+                sx={{
+                  fontFamily: "monospace",
+                  fontSize: 13,
+                  bgcolor: "rgba(15,118,110,0.04)",
+                  borderRadius: 1,
+                  p: 1.2,
+                }}
+              >
+                {/* FV formula */}
+                FV = P × [((1 + r)<sup>n</sup> − 1) / r] × (1 + r)
+              </Box>
+
+              <Typography variant="caption" color="text.secondary">
+                Where P is yearly contribution, r is annual interest rate, and n
+                is number of years.
+              </Typography>
+
+              <Divider sx={{ my: 1.5 }} />
 
               <Box
                 sx={{
@@ -348,26 +383,28 @@ export default function PpfCalculator() {
                   p: 1.5,
                 }}
               >
-                <Typography variant="subtitle2">Summary</Typography>
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  PPF maturity summary
+                </Typography>
 
                 <Typography variant="body2" color="text.secondary">
                   {hasResult
                     ? summary
-                    : "Enter PPF details above to see maturity value."}
+                    : "Enter your yearly contribution, interest rate and tenure to estimate your PPF maturity value."}
                 </Typography>
 
                 {hasResult && (
                   <>
                     <Typography variant="body2" sx={{ mt: 1 }}>
-                      <strong>Total investment:</strong>{" "}
+                      <strong>Total investment (in words):</strong>{" "}
                       {investedWordsSummary} Rupees
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Interest earned:</strong>{" "}
+                      <strong>Interest earned (in words):</strong>{" "}
                       {interestWordsSummary} Rupees
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Maturity amount:</strong>{" "}
+                      <strong>Maturity amount (in words):</strong>{" "}
                       {maturityWordsSummary} Rupees
                     </Typography>
                   </>
@@ -388,7 +425,7 @@ export default function PpfCalculator() {
               gap: 4,
             }}
           >
-            {/* LINE CHART */}
+            {/* LEFT – LINE CHART + YEARLY TABLE */}
             <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 PPF growth over time (yearly)
@@ -399,19 +436,66 @@ export default function PpfCalculator() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
                     <YAxis />
-                    <Tooltip />
+                    <Tooltip
+                      formatter={(v: number) =>
+                        `₹${v.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}`
+                      }
+                    />
                     <Legend />
-                    <Line dataKey="invested" stroke="#94a3b8" />
-                    <Line dataKey="total" stroke="#0f766e" />
+                    <Line
+                      dataKey="invested"
+                      name="Total invested"
+                      stroke="#94a3b8"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      dataKey="total"
+                      name="Corpus value"
+                      stroke="#0f766e"
+                      strokeWidth={2}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
+
+              <Typography
+                variant="body2"
+                sx={{ mt: 2 }}
+                color="text.secondary"
+              >
+                Year-by-year PPF balance table
+              </Typography>
+
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Year</TableCell>
+                    <TableCell align="right">Invested so far (₹)</TableCell>
+                    <TableCell align="right">Corpus value (₹)</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {lineData.map((row) => (
+                    <TableRow key={row.year}>
+                      <TableCell>{row.year}</TableCell>
+                      <TableCell align="right">
+                        {row.invested.toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell align="right">
+                        {row.total.toLocaleString("en-IN")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </Box>
 
-            {/* BAR CHART */}
+            {/* RIGHT – BAR CHART */}
             <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Investment vs Interest
+                Total investment vs interest earned
               </Typography>
               <Box sx={{ height: 320 }}>
                 <ResponsiveContainer>
@@ -419,10 +503,24 @@ export default function PpfCalculator() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip />
+                    <Tooltip
+                      formatter={(v: number) =>
+                        `₹${v.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}`
+                      }
+                    />
                     <Legend />
-                    <Bar dataKey="Invested" fill="#38bdf8" />
-                    <Bar dataKey="Interest" fill="#0f766e" />
+                    <Bar
+                      dataKey="Invested"
+                      name="Total invested"
+                      fill="#38bdf8"
+                    />
+                    <Bar
+                      dataKey="Interest"
+                      name="Interest earned"
+                      fill="#0f766e"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </Box>

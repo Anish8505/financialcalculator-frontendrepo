@@ -1,3 +1,4 @@
+// src/pages/TaxCalculatorPage.tsx
 import {
   Box,
   Typography,
@@ -6,6 +7,7 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
 import TaxCalculator from "../features/calculators/TaxCalculator";
 
 export default function TaxCalculatorPage() {
@@ -20,8 +22,8 @@ export default function TaxCalculatorPage() {
         sx={{ color: "text.secondary", mb: 3, maxWidth: "100%" }}
       >
         Use this income tax calculator to estimate your annual income tax
-        liability in India under the new tax regime. Enter your annual taxable
-        income to see slab-wise tax, cess and effective tax rate.
+        liability in India under the selected tax regime. Enter your annual
+        taxable income to see slab-wise tax, cess and effective tax rate.
       </Typography>
 
       <TaxCalculator />
@@ -46,10 +48,10 @@ export default function TaxCalculatorPage() {
           </AccordionSummary>
           <AccordionDetails>
             <Typography variant="body2" color="text.secondary">
-              Enter your estimated taxable income for the year – that is, income
-              after standard deductions, exemptions and eligible deductions like
-              80C, 80D, etc. This calculator gives an approximate tax estimate
-              and is for guidance only.
+              Enter your estimated taxable income for the year – that is,
+              income after standard deductions, exemptions and eligible
+              deductions like 80C, 80D, etc. This calculator gives an
+              approximate tax estimate and is for guidance only.
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -66,10 +68,10 @@ export default function TaxCalculatorPage() {
           </AccordionSummary>
           <AccordionDetails>
             <Typography variant="body2" color="text.secondary">
-              This is a simplified tax calculator based on slab rates similar to
-              the new tax regime. Real-life tax calculations may differ depending
-              on surcharges, rebates, deductions and other rules. Always verify
-              with a tax professional or official calculator.
+              This is a simplified tax calculator based on slab rates.
+              Real-life tax calculations may differ depending on surcharge,
+              rebate, deductions and other detailed rules. Always verify with
+              a tax professional or official tax utility.
             </Typography>
           </AccordionDetails>
         </Accordion>

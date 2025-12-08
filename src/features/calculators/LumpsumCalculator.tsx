@@ -1,3 +1,4 @@
+// src/features/calculators/LumpsumCalculator.tsx
 import { useState } from "react";
 import {
   Box,
@@ -27,7 +28,7 @@ import {
   Legend,
 } from "recharts";
 
-/* ---------- ADD THIS ---------- */
+/* ---------- API BASE URL ---------- */
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
@@ -60,7 +61,7 @@ type LumpsumApiResponse = {
 };
 
 /* ---------- helpers ---------- */
-// (unchanged code)
+
 const formatIndianNumber = (value: string) => {
   if (!value) return "";
   const cleaned = value.replace(/,/g, "");
@@ -68,8 +69,10 @@ const formatIndianNumber = (value: string) => {
   if (isNaN(Number(cleaned))) return value;
   return Number(cleaned).toLocaleString("en-IN");
 };
+
 const numberToWords = (num: number): string => {
   if (!num) return "";
+
   const a = [
     "",
     "one",
@@ -92,6 +95,7 @@ const numberToWords = (num: number): string => {
     "eighteen",
     "nineteen",
   ];
+
   const b = [
     "",
     "",
@@ -104,10 +108,12 @@ const numberToWords = (num: number): string => {
     "eighty",
     "ninety",
   ];
+
   const twoDigits = (n: number): string => {
     if (n < 20) return a[n];
     return b[Math.floor(n / 10)] + (n % 10 ? " " + a[Math.floor(n % 10)] : "");
   };
+
   const threeDigits = (n: number): string => {
     if (n === 0) return "";
     if (n < 100) return twoDigits(n);
@@ -117,6 +123,7 @@ const numberToWords = (num: number): string => {
       (n % 100 ? " " + twoDigits(n % 100) : "")
     );
   };
+
   let words = "";
   const units = [
     { value: 10000000, label: "crore" },
@@ -124,6 +131,7 @@ const numberToWords = (num: number): string => {
     { value: 1000, label: "thousand" },
     { value: 1, label: "" },
   ];
+
   for (const u of units) {
     if (num >= u.value) {
       const chunk = Math.floor(num / u.value);
@@ -133,8 +141,10 @@ const numberToWords = (num: number): string => {
       }
     }
   }
+
   return words.trim();
 };
+
 const toTitleCase = (str: string): string =>
   str.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
 
@@ -153,9 +163,8 @@ export default function LumpsumCalculator() {
   const [lineData, setLineData] = useState<LumpsumPoint[]>([]);
   const [barData, setBarData] = useState<BarPoint[]>([]);
 
-  const hasResult = lineData.length > 0;
+  const hasResult = lineData.length > 0 && barData.length > 0;
 
-  // 🔗 UPDATED URL BELOW
   const handleCalculate = async () => {
     const principal = Number(amount.replace(/,/g, ""));
     const r = Number(annualRate);
@@ -180,7 +189,6 @@ export default function LumpsumCalculator() {
         years: t.toString(),
       });
 
-      // ✅ ONLY CHANGE MADE HERE:
       const response = await fetch(
         `${API_BASE_URL}/lumpsum?${params.toString()}`
       );
@@ -225,6 +233,7 @@ export default function LumpsumCalculator() {
           total: p.total,
         }));
       } else {
+        // Fallback: approximate monthly compounding
         const monthlyRate = r / 12 / 100;
         for (let year = 1; year <= t; year++) {
           const n = year * 12;
@@ -276,9 +285,255 @@ export default function LumpsumCalculator() {
 
   return (
     <Box>
-      {/* FULL UI unchanged */}
-      {/** ALL BELOW CODE IS SAME AS YOUR FILE */}
-      {/** … (keeping everything without any modification) */}
+      {/* TOP CARD – FORM + EXPLANATION + SUMMARY */}
+      <Paper sx={{ p: 4, mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 4,
+          }}
+        >
+          {/* LEFT – FORM */}
+          <Box
+            sx={{
+              flex: { xs: "1 1 auto", md: "0 0 50%" },
+              "& .MuiTextField-root": { width: "100%" },
+            }}
+          >
+            <Stack spacing={2}>
+              <TextField
+                label="Lumpsum Investment (₹)"
+                value={amount}
+                onChange={(e) =>
+                  setAmount(formatIndianNumber(e.target.value))
+                }
+              />
+              {amountWords && (
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  {amountWords}
+                </Typography>
+              )}
+
+              <TextField
+                label="Expected Return (p.a. %)"
+                value={annualRate}
+                onChange={(e) => setAnnualRate(e.target.value)}
+              />
+              {rateWords && (
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  {rateWords}
+                </Typography>
+              )}
+
+              <TextField
+                label="Time Period (years)"
+                value={years}
+                onChange={(e) => setYears(e.target.value)}
+              />
+              {yearsWords && (
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  {yearsWords}
+                </Typography>
+              )}
+
+              <Button variant="contained" size="large" onClick={handleCalculate}>
+                Calculate Lumpsum Growth
+              </Button>
+            </Stack>
+          </Box>
+
+          {/* RIGHT – HOW IT WORKS + FORMULA + SUMMARY */}
+          <Box sx={{ flex: { xs: "1 1 auto", md: "0 0 50%" } }}>
+            <Stack spacing={1.5}>
+              <Typography variant="subtitle1">
+                How this lumpsum calculator works
+              </Typography>
+
+              <Typography variant="body2" color="text.secondary">
+                This calculator assumes you invest a one-time amount and let it
+                grow at a constant annual return, compounded monthly. It shows:
+              </Typography>
+
+              <ul style={{ marginTop: 0, paddingLeft: "1.2rem" }}>
+                <li>Total amount invested (your lumpsum)</li>
+                <li>Future value after the selected period</li>
+                <li>Wealth created (gain over your principal)</li>
+              </ul>
+
+              <Typography variant="body2" color="text.secondary">
+                We use a standard compound interest formula for lumpsum
+                investments:
+              </Typography>
+
+              <Box
+                sx={{
+                  fontFamily: "monospace",
+                  fontSize: 13,
+                  bgcolor: "rgba(15,118,110,0.04)",
+                  borderRadius: 1,
+                  p: 1.2,
+                }}
+              >
+                FV = P × (1 + r/n)<sup>n×t</sup>
+              </Box>
+
+              <Typography variant="caption" color="text.secondary">
+                Where P is your one-time investment, r is annual interest rate,
+                n is compounding frequency (12 for monthly), and t is years.
+              </Typography>
+
+              <Divider sx={{ my: 1.5 }} />
+
+              <Box
+                sx={{
+                  bgcolor: "rgba(240,248,255,0.7)",
+                  borderRadius: 2,
+                  p: 1.5,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  Lumpsum summary
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {hasResult
+                    ? summary
+                    : "Enter your one-time investment, expected return and time period to see the future value and wealth created."}
+                </Typography>
+
+                {hasResult && (
+                  <>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <strong>Invested amount (in words):</strong>{" "}
+                      {investedWordsSummary} Rupees
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Wealth created (in words):</strong>{" "}
+                      {gainWordsSummary} Rupees
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Future value (in words):</strong>{" "}
+                      {futureWordsSummary} Rupees
+                    </Typography>
+                  </>
+                )}
+              </Box>
+            </Stack>
+          </Box>
+        </Box>
+      </Paper>
+
+      {/* CHARTS + TABLE */}
+      {hasResult && (
+        <Paper sx={{ p: 4 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 4,
+            }}
+          >
+            {/* LEFT – LINE CHART + TABLE */}
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                Lumpsum growth over time (yearly)
+              </Typography>
+
+              <Box sx={{ height: 320 }}>
+                <ResponsiveContainer>
+                  <LineChart data={lineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip
+                      formatter={(v: number) =>
+                        `₹${v.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}`
+                      }
+                    />
+                    <Legend />
+                    <Line
+                      dataKey="invested"
+                      name="Invested amount"
+                      stroke="#94a3b8"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      dataKey="total"
+                      name="Future value"
+                      stroke="#0f766e"
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+
+              <Typography
+                variant="body2"
+                sx={{ mt: 2 }}
+                color="text.secondary"
+              >
+                Year-by-year growth table
+              </Typography>
+
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Year</TableCell>
+                    <TableCell align="right">Invested (₹)</TableCell>
+                    <TableCell align="right">Future value (₹)</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {lineData.map((row) => (
+                    <TableRow key={row.year}>
+                      <TableCell>{row.year}</TableCell>
+                      <TableCell align="right">
+                        {row.invested.toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell align="right">
+                        {row.total.toLocaleString("en-IN")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+
+            {/* RIGHT – BAR CHART */}
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                Total invested vs wealth gained
+              </Typography>
+
+              <Box sx={{ height: 320 }}>
+                <ResponsiveContainer>
+                  <BarChart data={barData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip
+                      formatter={(v: number) =>
+                        `₹${v.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}`
+                      }
+                    />
+                    <Legend />
+                    <Bar
+                      dataKey="Invested"
+                      name="Invested amount"
+                      fill="#38bdf8"
+                    />
+                    <Bar dataKey="Gain" name="Wealth gained" fill="#0f766e" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
+      )}
     </Box>
   );
 }
